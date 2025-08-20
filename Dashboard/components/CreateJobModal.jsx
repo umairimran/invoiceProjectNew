@@ -18,6 +18,7 @@ const CreateJobModal = ({ isOpen, onClose, onSubmit, agencyId }) => {
     const jobDataToSend = {
       title: title,
       agency_id: agencyId,
+      status: "pending", // Explicitly set status to pending
       created_by: localStorage.getItem('user_id'), // Assuming user_id is stored in localStorage after login
       formData: {
         title: title,

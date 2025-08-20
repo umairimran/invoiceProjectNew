@@ -23,7 +23,7 @@ const AgencyDetails = ({ agency }) => {
         </div>
       </div>
       
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Client Info */}
         <div>
           <h3 className="font-helveticaBold text-lg mb-3">Client</h3>
@@ -33,7 +33,7 @@ const AgencyDetails = ({ agency }) => {
               <p className="font-medium">{agency.client_id}</p>
             </div>
           </div>
-        </div>
+                </div>
         
         {/* Rate Card Info */}
         <div>
@@ -64,20 +64,18 @@ const AgencyDetails = ({ agency }) => {
           </div>
         </div>
         
-        {/* Creation Info */}
-        <div>
-          <h3 className="font-helveticaBold text-lg mb-3">Creation Info</h3>
-          <div className="space-y-2">
-            <div>
-              <p className="text-sm text-gray-500">Created By</p>
-              <p className="font-medium">{agency.created_by}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Created At</p>
-              <p className="font-medium">{formatDate(agency.created_at)}</p>
-            </div>
-          </div>
+        {/* Summary Button */}
+        <div className="flex items-end">
+          <button 
+            onClick={() => window.location.href = `/agency/${agency.agency_code}/summary`}
+            className="bg-secondary hover:bg-secondary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow-md"
+          >
+            <i className="fas fa-chart-bar mr-2"></i>
+            Summary
+          </button>
         </div>
+        
+ 
       </div>
       
       {/* Custom Folders Section - if available */}

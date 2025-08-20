@@ -12,9 +12,26 @@ const JobsList = ({ jobs }) => {
     router.push(`/job/${jobId}`);
   };
 
-  const isJobCompliant = (job) => {
-    if (!job) return false; // Re-adding the null check
-    if (!job.checklist) return false;
+  const getJobStatusDisplay = (job) => {
+    if (!job) return { text: 'Unknown', className: 'bg-gray-100 text-gray-800' };
+    
+    // First check the job status
+    if (job.status === 'Compliant') {
+      return { text: 'Compliant', className: 'bg-green-100 text-green-800' };
+    } else if (job.status === 'Not Compliant') {
+      return { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
+    } else if (job.status === 'completed') {
+      return { text: 'Completed', className: 'bg-green-100 text-green-800' };
+    } else if (job.status === 'not_compliant') {
+      return { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
+    } else if (job.status === 'in_progress') {
+      return { text: 'In Progress', className: 'bg-yellow-100 text-yellow-800' };
+    } else if (job.status === 'pending') {
+      return { text: 'Pending', className: 'bg-blue-100 text-blue-800' };
+    }
+    
+    // Fallback to document-based compliance check
+    if (!job.checklist) return { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
     const requiredDocs = [
       'agency_invoice',
       'approved_quotation',
@@ -23,7 +40,10 @@ const JobsList = ({ jobs }) => {
       'third_party',
       'performance_proof',
     ];
-    return requiredDocs.every((docType) => job.checklist[docType] && job.checklist[docType].length > 0);
+    const hasAllDocs = requiredDocs.every((docType) => job.checklist[docType] && job.checklist[docType].length > 0);
+    return hasAllDocs 
+      ? { text: 'Compliant', className: 'bg-green-100 text-green-800' }
+      : { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
   };
 
   return (
@@ -40,7 +60,7 @@ const JobsList = ({ jobs }) => {
           <tbody>
             {jobs.length > 0 ? (
               jobs.map((job) => {
-                const compliant = isJobCompliant(job);
+                const statusDisplay = getJobStatusDisplay(job);
                 return (
                   <tr key={job.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-4 px-4">
@@ -48,13 +68,9 @@ const JobsList = ({ jobs }) => {
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          compliant
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusDisplay.className}`}
                       >
-                        {compliant ? 'Compliant' : 'Not Compliant'}
+                        {statusDisplay.text}
                       </span>
                     </td>
                     <td className="py-4 px-4">

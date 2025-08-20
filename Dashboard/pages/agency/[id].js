@@ -77,7 +77,7 @@ export default function AgencyDetailsPage() {
     <Layout title={agency ? `${agency.name} | Agency Details` : 'Agency Details'}>
       <div className="mb-6">
         <button 
-          onClick={() => router.back()}
+          onClick={() => router.push('/clients')}
           className="inline-flex items-center px-6 py-3 text-base font-semibold text-white bg-secondary hover:bg-secondary/90 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           <i className="fas fa-arrow-left mr-3 text-lg"></i>
@@ -95,7 +95,7 @@ export default function AgencyDetailsPage() {
           <i className="fas fa-exclamation-triangle text-secondary text-2xl mb-2"></i>
           <p className="font-helvetica">{error}</p>
           <button 
-            onClick={() => router.back()}
+            onClick={() => router.push('/clients')}
             className="btn btn-secondary mt-4"
           >
             Go Back
@@ -140,7 +140,7 @@ export default function AgencyDetailsPage() {
           <i className="fas fa-exclamation-triangle text-secondary text-2xl mb-2"></i>
           <p className="font-helvetica">Agency not found</p>
           <button 
-            onClick={() => router.back()}
+            onClick={() => router.push('/clients')}
             className="btn btn-secondary mt-4"
           >
             Go Back

@@ -277,7 +277,7 @@ def post_process_data(data: Dict[str, Any]) -> None:
             pass
 
 
-def validate_job_checklist(job: Dict[str, Any]) -> List[str]:
+def validate_job_checklist(job: Dict[str, Any]) -> Dict[str, any]:
     """
     Validates the documents in the job's checklist against predefined rules.
 
@@ -285,49 +285,62 @@ def validate_job_checklist(job: Dict[str, Any]) -> List[str]:
         job: The job document from MongoDB.
 
     Returns:
-        A list of strings indicating missing or incorrect items.
+        A dictionary containing validation results:
+        - is_compliant: boolean indicating if all requirements are met
+        - missing_items: list of strings indicating missing or incorrect items
+        - initial_review_outcome: text describing the validation result
+        - final_review_outcome: "Compliant" or "Non-Compliant"
     """
     missing_items = []
     checklist = job.get("checklist", {})
 
-    # Rule 1: invoices - exactly three PDF files
-    invoices = checklist.get("agency_invoice", [])
-    pdf_invoices = [doc for doc in invoices if doc.get("file_path", "").lower().endswith(".pdf")]
-    if len(pdf_invoices) != 3:
-        missing_items.append("invoices (exactly 3 PDF files required)")
+    # Check 1: Agency Invoice - must have 3 files (representing 20%, 30%, 50%)
+    agency_invoices = checklist.get("agency_invoice", [])
+    if len(agency_invoices) != 3:
+        if len(agency_invoices) == 0:
+            missing_items.append("1- the agency invoice for 20% has not been attached")
+            missing_items.append("2- the agency invoice for 30% has not been attached")
+            missing_items.append("3- the agency invoice for 50% has not been attached")
+        elif len(agency_invoices) == 1:
+            missing_items.append("2- the agency invoice for 30% has not been attached")
+            missing_items.append("3- the agency invoice for 50% has not been attached")
+        elif len(agency_invoices) == 2:
+            missing_items.append("3- the agency invoice for 50% has not been attached")
 
-    # Rule 2: approved_quotation - exactly two Excel files
-    approved_quotation = checklist.get("approved_quotation", [])
-    excel_quotations = [doc for doc in approved_quotation if doc.get("file_path", "").lower().endswith((".xls", ".xlsx"))]
-    if len(excel_quotations) != 2:
-        missing_items.append("approved_quotation (exactly 2 Excel files required)")
+    # Check 2: Approved Quotation - must have 2 documents
+    approved_quotations = checklist.get("approved_quotation", [])
+    if len(approved_quotations) != 2:
+        if len(approved_quotations) == 0:
+            missing_items.append("4- the approved quotation documents have not been attached")
+        elif len(approved_quotations) == 1:
+            missing_items.append("5- one approved quotation document is missing")
 
-    # Rule 3: job_order - exactly one PDF file
-    job_order = checklist.get("job_order", [])
-    pdf_job_orders = [doc for doc in job_order if doc.get("file_path", "").lower().endswith(".pdf")]
-    if len(pdf_job_orders) != 1:
-        missing_items.append("job_order (exactly 1 PDF file required)")
+    # Check 3: Job Order - must have 1 document
+    job_orders = checklist.get("job_order", [])
+    if len(job_orders) != 1:
+        if len(job_orders) == 0:
+            missing_items.append("6- the job order has not been attached")
+        else:
+            missing_items.append("7- multiple job orders found, only one is required")
 
-    # Rule 4: timesheet - always true for now
-    if not checklist.get("timesheet", True):  # Assuming 'True' means valid/not missing for now
-        # This condition will likely never be met with current assumption, but keeps the structure
-        missing_items.append("timesheet (always considered valid for now)")
+    # Determine overall compliance
+    is_compliant = len(missing_items) == 0
     
-    # Rule 5: third_party - always true for now
-    if not checklist.get("third_party", True):  # Assuming 'True' means valid/not missing for now
-        # This condition will likely never be met with current assumption, but keeps the structure
-        missing_items.append("third_party (always considered valid for now)")
+    # Set review outcomes
+    if is_compliant:
+        initial_review_outcome = "All required documents are present and valid."
+        final_review_outcome = "Approved"
+    else:
+        missing_items_text = "; ".join(missing_items)
+        initial_review_outcome = f"Missing or incorrect documents: {missing_items_text}"
+        final_review_outcome = "Not Approved"
 
-    # Rule 6: performance_proof - any number of screenshots (JPG, JPEG, PNG)
-    performance_proof = checklist.get("performance_proof", [])
-    screenshot_proofs = [doc for doc in performance_proof if doc.get("file_path", "").lower().endswith((".jpg", ".jpeg", ".png"))]
-    if not screenshot_proofs and len(performance_proof) > 0:
-        # If there are files but none are screenshots, or if there are no files at all
-        missing_items.append("performance_proof (at least one screenshot required if section exists)")
-    elif len(performance_proof) == 0:
-        pass # No performance proof documents are present, which is acceptable if not required.
-
-    return missing_items
+    return {
+        "is_compliant": is_compliant,
+        "missing_items": missing_items,
+        "initial_review_outcome": initial_review_outcome,
+        "final_review_outcome": final_review_outcome
+    }
 def gemini_api_function(prompt: str, schema: dict):
     import os
     from dotenv import load_dotenv

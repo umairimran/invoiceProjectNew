@@ -56,7 +56,7 @@ async def create_job(
         description=created_job.get("description"),
         start_date=created_job.get("start_date"),
         end_date=created_job.get("end_date"),
-        status=created_job["status"],
+        status=created_job.get("status", "pending"),  # Default to pending if status is missing
         review=created_job["review"],
         checklist=created_job["checklist"],
         created_by="Admin",
@@ -101,7 +101,7 @@ async def read_jobs(
             description=job.get("description"),
             start_date=job.get("start_date"),
             end_date=job.get("end_date"),
-            status=job["status"],
+            status=job.get("status", "pending"),  # Default to pending if status is missing
             review=review,
             checklist=checklist,
             created_by=job["created_by"],
@@ -140,7 +140,7 @@ async def read_job(
             description=job.get("description"),
             start_date=job.get("start_date"),
             end_date=job.get("end_date"),
-            status=job["status"],
+            status=job.get("status", "pending"),  # Default to pending if status is missing
             review=review,
             checklist=checklist,
             created_by=job["created_by"],
@@ -471,7 +471,10 @@ async def run_ai_process(job_id: str):
     media_plan_details = extract_media_plan_details(approved_quotation_docs)
     print("MEDIA PLAN DETAILS:", json.dumps(media_plan_details, indent=4))
 
-    # --- Step 4: Combine Results and Update Job ---
+    # --- Step 4: Validate Job Checklist ---
+    validation_result = validate_job_checklist(job)
+    
+    # --- Step 5: Combine Results and Update Job ---
     final_review_data = {
         # Header / identifiers
         "market_bu": media_plan_details.get("market_type"),
@@ -498,10 +501,10 @@ async def run_ai_process(job_id: str):
         "media_plan_total_amount": media_plan_details.get("media_plan_total_amount"),
         "po_amount_with_af": po_details.get("po_amount"),
 
-        # Review text
-        "initial_review_outcome": None, # Set by checklist validation if needed, otherwise None
+        # Review text - Now set based on validation results
+        "initial_review_outcome": validation_result["initial_review_outcome"],
         "agency_feedback_action": None,
-        "final_review_outcome": "Compliant", # Set as Compliant if all documents are present
+        "final_review_outcome": validation_result["final_review_outcome"],
         "status_of_received_invoices": None,
 
         # Month tag

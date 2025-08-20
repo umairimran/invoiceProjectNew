@@ -123,6 +123,9 @@ class JobStatus(str, Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
+    NOT_COMPLIANT = "not_compliant"
+    COMPLIANT = "Compliant"
+    NOT_COMPLIANT_FINAL = "Not Compliant"
 
 
 # Job Review/Finance structure

@@ -104,32 +104,96 @@ export default function JobDetailsPage() {
   const handleAIProcess = async () => {
     if (!id) return;
     
+    // Check if any documents are uploaded
+    const hasDocuments = job?.checklist && Object.values(job.checklist).some(folder => folder && folder.length > 0);
+    
+    if (!hasDocuments) {
+      setError('Please upload your documents first before running AI processing.');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
+    // Generate review based on missing documents (regardless of AI success/failure)
+    const missingItems = [];
+    const checklist = job?.checklist || {};
+    
+    // Check for missing documents
+    if (!checklist.agency_invoice || checklist.agency_invoice.length === 0) {
+      missingItems.push("1- the agency invoice for 20% has not been attached");
+      missingItems.push("2- the agency invoice for 30% has not been attached");
+      missingItems.push("3- the agency invoice for 50% has not been attached");
+    } else if (checklist.agency_invoice.length === 1) {
+      missingItems.push("2- the agency invoice for 30% has not been attached");
+      missingItems.push("3- the agency invoice for 50% has not been attached");
+    } else if (checklist.agency_invoice.length === 2) {
+      missingItems.push("3- the agency invoice for 50% has not been attached");
+    }
+    
+    if (!checklist.approved_quotation || checklist.approved_quotation.length === 0) {
+      missingItems.push("4- the approved quotation documents have not been attached");
+    } else if (checklist.approved_quotation.length === 1) {
+      missingItems.push("5- one approved quotation document is missing");
+    }
+    
+    if (!checklist.job_order || checklist.job_order.length === 0) {
+      missingItems.push("6- the job order has not been attached");
+    } else if (checklist.job_order.length > 1) {
+      missingItems.push("7- multiple job orders found, only one is required");
+    }
+    
+    // Generate initial review outcome
+    const initialReviewOutcome = missingItems.length > 0 
+      ? `Missing or incorrect documents: ${missingItems.join("; ")}`
+      : "All required documents are present and valid.";
+    
+    // Set final review outcome based on missing items
+    const finalReviewOutcome = missingItems.length > 0 ? "Not Approved" : "Approved";
+    
     try {
-      // Call the AI processing endpoint
+      // Try AI processing first
       const updatedJob = await jobsAPI.runAIProcess(id);
       
-      // Update the job state with the processed data
-      setJob(updatedJob);
+      // If AI succeeds, merge with our generated review
+      const mergedReview = {
+        ...updatedJob.review,
+        initial_review_outcome: initialReviewOutcome,
+        final_review_outcome: finalReviewOutcome
+      };
       
-      // Update the form data
-      setFormData({
+      const updatedJobData = {
         ...updatedJob,
-        review: updatedJob.review || {}
-      });
+        status: finalReviewOutcome === "Approved" ? 'Compliant' : 'Not Compliant',
+        review: mergedReview
+      };
       
-      // Show success message
-      setSuccessMessage('AI processing completed successfully! Review the extracted data below.');
-      
-      // Clear success message after 5 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 5000);
+      setJob(updatedJobData);
+      setFormData(updatedJobData);
+      setSuccessMessage(`AI processing completed and review generated. Status: ${finalReviewOutcome}`);
     } catch (err) {
       console.error('Error running AI process:', err);
-      setError(`AI processing failed: ${err.message}`);
+      
+      // If AI fails, just use our generated review
+      const updatedJobData = {
+        ...formData,
+        status: finalReviewOutcome === "Approved" ? 'Compliant' : 'Not Compliant',
+        review: {
+          ...formData?.review,
+          initial_review_outcome: initialReviewOutcome,
+          final_review_outcome: finalReviewOutcome
+        }
+      };
+      
+      try {
+        const updatedJob = await jobsAPI.update(id, updatedJobData);
+        setJob(updatedJob);
+        setFormData(updatedJobData);
+        setSuccessMessage(`Review generated based on available documents. Status: ${finalReviewOutcome}`);
+      } catch (updateErr) {
+        console.error('Error updating job with review:', updateErr);
+        setError('Failed to update job with review data.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -138,16 +202,33 @@ export default function JobDetailsPage() {
   // Handle job approval
   const handleApproval = async (approved) => {
     try {
+      // Get the current final review outcome from the job data
+      const finalReviewOutcome = job?.review?.final_review_outcome || formData?.review?.final_review_outcome;
+      
+      // Determine status based on Final Review Outcome
+      let newStatus;
+      if (finalReviewOutcome === "Approved") {
+        newStatus = 'Compliant';
+      } else if (finalReviewOutcome === "Not Approved") {
+        newStatus = 'Not Compliant';
+      } else {
+        // Default behavior if final review outcome is not set
+        newStatus = job?.status || 'pending';
+      }
+      
       const updatedData = {
         ...formData,
-        status: approved ? 'completed' : 'in_progress'
+        status: newStatus
       };
       
       const updatedJob = await jobsAPI.update(id, updatedData);
       setJob(updatedJob);
       setFormData(updatedJob);
       
-      setSuccessMessage(`Job ${approved ? 'approved' : 'returned for revision'} successfully`);
+      const statusMessage = finalReviewOutcome === "Approved" ? 'marked as Compliant' : 
+                           finalReviewOutcome === "Not Approved" ? 'marked as Not Compliant' : 
+                           'updated';
+      setSuccessMessage(`Job ${statusMessage} successfully`);
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -447,6 +528,21 @@ export default function JobDetailsPage() {
                 </button>
               </div>
             </div>
+            
+
+            
+            {/* Warning message when AI process fails due to no documents */}
+            {error && error.includes('upload your documents') && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <i className="fas fa-exclamation-triangle text-yellow-600 mr-3 text-lg"></i>
+                  <div>
+                    <h4 className="font-helveticaBold text-yellow-800 text-lg">Upload documents please</h4>
+                    <p className="text-yellow-700 text-sm mt-1">Please upload the required documents before proceeding with the approval process.</p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="font-helveticaBold text-lg mb-4">Approval Decision</h3>

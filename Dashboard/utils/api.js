@@ -479,6 +479,7 @@ export const jobsAPI = {
   runAIProcess: async (jobId) => {
     try {
       console.log(`Running AI process for job ${jobId}`);
+      
       const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/run_ai_process`, {
         method: 'POST',
         headers: {
