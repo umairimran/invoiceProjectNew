@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Helvetica Black';
+  src: url('/fonts/HelveticaBlack.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/fonts/Helvetica.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Helvetica Bold';
+  src: url('/fonts/HelveticaBold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Signika';
+  src: url('/fonts/Signika-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Signika';
+  src: url('/fonts/Signika-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Signika';
+  src: url('/fonts/Signika-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+}
+
+body {
+  font-family: 'Helvetica', sans-serif;
+  background-color: #f5f5f5;
+}
+
+/* Custom utility classes */
+.card {
+  @apply bg-white rounded-card shadow-card p-6;
+}
+
+.sidebar-link {
+  @apply flex items-center py-3 px-4 w-full rounded-lg hover:bg-gray-700 transition-colors;
+}
+
+.sidebar-link.active {
+  @apply bg-secondary text-white hover:bg-secondary/90;
+}
+
+.title {
+  @apply font-signika font-bold text-2xl text-primary;
+}
+
+.subtitle {
+  @apply font-signika font-light text-lg text-gray-700;
+}
+
+/* Button styles */
+.btn {
+  @apply px-4 py-2 rounded-lg font-helvetica transition-colors;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-gray-800;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white hover:bg-secondary/90;
+}
+
+/* Form styles */
+input:focus, select:focus, textarea:focus {
+  @apply outline-none ring-2 ring-secondary/50 border-transparent;
+}
+
+/* Table styles */
+table th {
+  @apply font-helveticaBold;
+}
+
+table td {
+  @apply font-helvetica;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

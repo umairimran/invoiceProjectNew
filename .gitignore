@@ -1,0 +1,5 @@
+venv/
+node_modules/
+frontend/.next/
+Dashboard/.next/
+frontend2/.next/
