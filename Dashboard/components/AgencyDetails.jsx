@@ -64,14 +64,21 @@ const AgencyDetails = ({ agency }) => {
           </div>
         </div>
         
-        {/* Summary Button */}
-        <div className="flex items-end">
+        {/* Summary and Detailed Review Buttons */}
+        <div className="flex items-end space-x-3">
           <button 
             onClick={() => window.location.href = `/agency/${agency.agency_code}/summary`}
             className="bg-secondary hover:bg-secondary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow-md"
           >
             <i className="fas fa-chart-bar mr-2"></i>
             Summary
+          </button>
+          <button 
+            onClick={() => window.location.href = `/agency/${agency.agency_code}/detailed-review`}
+            className="bg-secondary hover:bg-secondary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow-md"
+          >
+            <i className="fas fa-file-invoice mr-2"></i>
+            Detailed Invoice Review
           </button>
         </div>
         
