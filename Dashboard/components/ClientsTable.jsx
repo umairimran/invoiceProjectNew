@@ -163,7 +163,7 @@ const ClientsTable = ({ data, onCreateClient, sourcePage }) => {
                   <div className="flex space-x-2">
                     <Link href={`/client/${client.client_code}${sourcePage ? `?from=${sourcePage}` : ''}`} passHref>
                       <button 
-                        className="btn btn-sm btn-primary py-1 px-3"
+                        className="btn btn-sm btn-secondary py-1 px-3"
                         title="View Client Details"
                       >
                         View Client Details

@@ -6,26 +6,39 @@ import PieChart from '../components/charts/PieChart';
 import ClientsTable from '../components/ClientsTable';
 import ClientModal from '../components/ClientModal';
 
-// Import dummy data
+// Import dummy data for charts
 import { 
-  metricCardData, 
   invoiceStatusData, 
   marketData, 
   spendPerMarketData,
   clientsData 
 } from '../data/dummyData';
 
-import { clientsAPI, agenciesAPI } from '../utils/api';
+import { clientsAPI, agenciesAPI, dashboardAPI } from '../utils/api';
 
 export default function Home() {
   const [clients, setClients] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState({
+    total_clients: 0,
+    total_agencies: 0,
+    total_invoices: 0,
+    pending_invoices: 0,
+    compliant_jobs: 0,
+    non_compliant_jobs: 0
+  });
 
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch dashboard statistics
+        const stats = await dashboardAPI.getStats();
+        setDashboardStats(stats);
+        
+        // Fetch clients data
         const data = await clientsAPI.getAll();
+        
         const clientsWithAgencyCounts = await Promise.all(
           data.map(async (client) => {
             try {
@@ -46,12 +59,12 @@ export default function Home() {
         setClients(clientsWithAgencyCounts);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching clients:', error);
+        console.error('Error fetching data:', error);
         setIsLoading(false);
       }
     };
 
-    fetchClients();
+    fetchData();
   }, []);
 
   const handleCreateClient = async (clientData) => {
@@ -73,50 +86,39 @@ export default function Home() {
   };
 
   return (
-    <Layout title="Dashboard | Medpush DMCC">
-      <div className="mb-6 flex items-center justify-between">
+    <Layout title="Dashboard | Medpush X MEDPUSH">
+      <div className="mb-6">
         <div>
           <h1 className="title">Dashboard</h1>
-          <p className="subtitle">Welcome to Medpush DMCC Dashboard</p>
-        </div>
-        <div className="flex space-x-3">
-          <button className="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center">
-            <i className="fas fa-download mr-2"></i>
-            <span>Export</span>
-          </button>
-          <button className="btn btn-secondary flex items-center">
-            <i className="fas fa-plus mr-2"></i>
-            <span>New Report</span>
-          </button>
+          <p className="subtitle">Welcome to Medpush X MEDPUSH Dashboard</p>
         </div>
       </div>
+
+
 
       {/* Metric Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <MetricCard 
           title="Clients" 
-          value={metricCardData.clients} 
+          value={dashboardStats.total_clients || 0} 
           icon="fas fa-users" 
           iconColor="bg-secondary" 
-          trend={{ direction: 'up', value: 12 }}
         />
         <MetricCard 
           title="Agencies" 
-          value={metricCardData.agencies} 
+          value={dashboardStats.total_agencies || 0} 
           icon="fas fa-building" 
           iconColor="bg-secondary" 
-          trend={{ direction: 'up', value: 8 }}
         />
         <MetricCard 
-          title="Invoices Received" 
-          value={metricCardData.invoicesReceived} 
+          title="Total Jobs" 
+          value={dashboardStats.total_invoices || 0} 
           icon="fas fa-file-invoice" 
           iconColor="bg-secondary" 
-          trend={{ direction: 'up', value: 24 }}
         />
         <MetricCard 
-          title="Ongoing Invoices" 
-          value={metricCardData.ongoingInvoices} 
+          title="Ongoing Jobs" 
+          value={dashboardStats.pending_invoices || 0} 
           icon="fas fa-hourglass-half" 
           iconColor="bg-secondary"
         />
@@ -126,10 +128,10 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <div className="h-80">
           <BarChart 
-            title="Approved vs Rejected Invoices" 
+            title="Compliant vs Non-Compliant Jobs" 
             data={[
-              { name: 'Approved', value: 120, fill: '#28a745' },
-              { name: 'Rejected', value: 30, fill: '#C21A2C' },
+              { name: 'Compliant', value: dashboardStats.compliant_jobs || 0, fill: '#28a745' },
+              { name: 'Non-Compliant', value: dashboardStats.non_compliant_jobs || 0, fill: '#C21A2C' },
             ]}
           />
         </div>

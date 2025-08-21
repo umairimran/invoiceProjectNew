@@ -17,7 +17,7 @@ from models import (
     Agency, AgencyCreate, AgencyInDB,
     Invoice, InvoiceCreate, InvoiceInDB,
 )
-from db import users_collection, clients_collection, agencies_collection, invoices_collection
+from db import users_collection, clients_collection, agencies_collection, invoices_collection, jobs_collection
 
 router = APIRouter()
 
@@ -537,3 +537,43 @@ async def delete_custom_folder(agency_code: str, folder_type: str):
     )
     
     return {"message": f"Folder '{folder_to_delete['name']}' deleted successfully"}
+
+# Dashboard statistics endpoint
+@router.get("/dashboard/stats")
+async def get_dashboard_stats():
+    """Get dashboard statistics including total clients, agencies, jobs, and pending jobs"""
+    try:
+        # Count total clients
+        total_clients = await clients_collection.count_documents({})
+        
+        # Count total agencies
+        total_agencies = await agencies_collection.count_documents({})
+        
+        # Count total jobs (these are the invoices/jobs)
+        total_jobs = await jobs_collection.count_documents({})
+        
+        # Count pending jobs (only jobs with status 'pending')
+        pending_jobs = await jobs_collection.count_documents({
+            "status": "pending"
+        })
+        
+        # Count compliant jobs
+        compliant_jobs = await jobs_collection.count_documents({
+            "status": "Compliant"
+        })
+        
+        # Count non-compliant jobs
+        non_compliant_jobs = await jobs_collection.count_documents({
+            "status": "Not Compliant"
+        })
+        
+        return {
+            "total_clients": total_clients,
+            "total_agencies": total_agencies,
+            "total_invoices": total_jobs,
+            "pending_invoices": pending_jobs,
+            "compliant_jobs": compliant_jobs,
+            "non_compliant_jobs": non_compliant_jobs
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching dashboard stats: {str(e)}")

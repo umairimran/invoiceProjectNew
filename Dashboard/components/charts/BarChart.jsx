@@ -14,7 +14,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 shadow-md rounded-md border border-gray-100">
-        <p className="font-helvetica text-sm">{`${label}: ${payload[0].value.toLocaleString()}`}</p>
+        <p className="font-helvetica text-sm">{`${label}: ${Math.round(payload[0].value)}`}</p>
       </div>
     );
   }
@@ -43,6 +43,10 @@ const BarChart = ({ title, data, dataKey = 'value', nameKey = 'name', barColor =
               tick={{ fontFamily: 'Helvetica', fontSize: 12 }}
               tickLine={false}
               axisLine={{ stroke: '#E0E0E0' }}
+              tickFormatter={(value) => Math.round(value)}
+              allowDecimals={false}
+              domain={[0, 'dataMax + 1']}
+              ticks={[0, 1, 2, 3, 4, 5]}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />

@@ -8,11 +8,7 @@ const Sidebar = () => {
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: 'fas fa-tachometer-alt' },
-    { name: 'Clients', path: '/clients', icon: 'fas fa-users' },
-    { name: 'Agencies', path: '/agencies', icon: 'fas fa-building' },
-    { name: 'Jobs', path: '/jobs', icon: 'fas fa-tasks' },
-    { name: 'Invoices', path: '/invoices', icon: 'fas fa-file-invoice' },
-    { name: 'Settings', path: '/settings', icon: 'fas fa-cog' }
+    { name: 'Clients', path: '/clients', icon: 'fas fa-users' }
   ];
 
   const toggleSidebar = () => {
@@ -28,8 +24,8 @@ const Sidebar = () => {
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         <div className={`flex items-center ${isCollapsed ? 'hidden' : 'block'}`}>
           <div className="flex flex-col">
-            <span className="font-signika font-bold text-xl">MEDPUSH</span>
-            <span className="font-signika font-light text-xs text-gray-300">DMCC</span>
+            <span className="font-signika font-bold text-xl">Medpush X</span>
+            <span className="font-signika font-light text-xs text-gray-300">MEDPUSH</span>
           </div>
         </div>
         <button 

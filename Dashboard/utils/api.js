@@ -54,7 +54,13 @@ const MOCK_DATA = {
     }
   },
   agencies: [],
-  clients: []
+  clients: [],
+  dashboardStats: {
+    total_clients: 1,
+    total_agencies: 1,
+    total_invoices: 0,
+    pending_invoices: 0
+  }
 };
 
 // Flag to use mock data in development when API is not available
@@ -159,6 +165,7 @@ async function fetchAPI(endpoint, options = {}) {
         // Extract resource type and ID from endpoint
         const isJobById = endpoint.match(/\/jobs\/([a-zA-Z0-9]+)$/);
         const isJobsList = endpoint.match(/\/jobs(\?|$)/);
+        const isDashboardStats = endpoint.match(/\/dashboard\/stats$/);
         
         if (isJobById) {
           const jobId = isJobById[1];
@@ -167,6 +174,8 @@ async function fetchAPI(endpoint, options = {}) {
           }
         } else if (isJobsList) {
           return Object.values(MOCK_DATA.jobs);
+        } else if (isDashboardStats) {
+          return MOCK_DATA.dashboardStats;
         }
         
         // Add more mock data handlers as needed
@@ -592,5 +601,43 @@ export const authAPI = {
    */
   getCurrentUser: async () => {
     return fetchAPI('/users/me');
+  },
+};
+
+// Dashboard-related API functions
+export const dashboardAPI = {
+  /**
+   * Get dashboard statistics
+   * @returns {Promise<Object>} - Dashboard stats (total_clients, total_agencies, total_invoices, pending_invoices)
+   */
+  getStats: async () => {
+    const url = `${API_BASE_URL}/dashboard/stats`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Dashboard API error:', error);
+      // Return zeros if API fails
+      return {
+        total_clients: 0,
+        total_agencies: 0,
+        total_invoices: 0,
+        pending_invoices: 0,
+        compliant_jobs: 0,
+        non_compliant_jobs: 0
+      };
+    }
   },
 };
