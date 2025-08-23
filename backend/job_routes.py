@@ -490,7 +490,11 @@ async def run_ai_process(job_id: str):
 
         # Campaign / medium
         "medium": media_plan_details.get("medium"),
-        "campaign_name": invoice_details.get("invoices", [{}])[0].get("campaign_name"),
+        "campaign_name": (
+            invoice_details.get("invoices", [{}])[0].get("campaign_name")
+            if invoice_details.get("invoices") and len(invoice_details.get("invoices", [])) > 0
+            else None
+        ),
 
         # Financials
         "net_media_cost": media_plan_details.get("net_media_cost"),
