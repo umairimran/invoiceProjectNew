@@ -120,12 +120,8 @@ class Agency(AgencyBase):
 # Job Models 
 # ==============================
 class JobStatus(str, Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    NOT_COMPLIANT = "not_compliant"
-    COMPLIANT = "Compliant"
-    NOT_COMPLIANT_FINAL = "Not Compliant"
+    NOT_COMPLIANT = "Not Compliant"  # Default status when job is created
+    COMPLIANT = "Compliant"           # Status when all documents are verified
 
 
 # Job Review/Finance structure
@@ -190,7 +186,7 @@ class JobBase(BaseModel):
     description: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: JobStatus = JobStatus.PENDING
+    status: JobStatus = JobStatus.NOT_COMPLIANT
     review: Optional[JobReview] = None
     checklist: JobChecklist = Field(default_factory=JobChecklist)
 

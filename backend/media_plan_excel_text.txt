@@ -1,0 +1,70 @@
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	Client:	STA 	nan	nan	nan	nan	nan	nan
+nan	Period:	Sep 2024 - Apr 2025	nan	nan	nan	nan	nan	nan
+nan	Market : 	Bridging Cultures_Influencer Marketing Program 2024	nan	nan	nan	nan	nan	nan
+nan	Date : 	2024-08-11 00:00:00	nan	nan	nan	nan	nan	nan
+nan	Version:	V2	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	Here Below is the summary table of the Bridging Cultures: Influencer Marketing for Saudi Arabia in South Korea, Japan, and Australia 2024 for the total value of SAR 933,800 mapped to the framework agreement line descriptions.	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	فيما يلي جدول ملخص لبرنامج جسور الثقافة: التسويق عبر المؤثرين للسعودية في كوريا الجنوبية، اليابان، وأستراليا 2024 بقيمة إجمالية قدرها SAR 933,800  ريال سعودي تم تعيينها لأوصاف بنود الاتفاقية الإطارية.	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	Total Net to media 	nan	nan	nan	nan	nan	nan	nan
+nan	Partner	Weight	Start	End	Geotargeting	Budget SAR	Budget USD	Impressions
+nan	Bridging Cultures Influencer Marketing Program across three pases:
+BUILD - Buildup Stage Online Engagement (Pre-Visit)
+LAUNCH - During Visit
+SUSTAIN - Post-Visit Engagement	1	2024-10-10 00:00:00	2024-12-30 00:00:00	Australia, Japan, South Korea	1000	266.6666666666667	6600000
+nan	nan	1	nan	Total Net to media 	nan	1000	266.6666666666667	6600000
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	Summary Table Mapped to the Framework agreement description including Taxes and Fees	nan	nan	nan	nan	nan	nan	nan
+nan	Total Budget by Platform	Total	Agency Fee	Fee SAR	Fee USD	nan	nan	nan
+nan	التلفاز  
+Television	0	0.5%	0	0	nan	nan	nan
+nan	الراديو  
+Radio 	0	0.25%	0	0	nan	nan	nan
+nan	المطبوعات 
+Print 	0	0.25%	0	0	nan	nan	nan
+nan	خارج المنزل-داخلية- داخل المول 
+Out of home – Indoor – In malls 	0	0.5%	0	0	nan	nan	nan
+nan	على متن الطائرة 
+Inflight 	0	0.25%	0	0	nan	nan	nan
+nan	السينما 
+Cinema 	0	0.25%	0	0	nan	nan	nan
+nan	مواد اعلانية رقمية  
+Digital non biddable 	SAR 799,999	1.5%	SAR 12,000	3200	nan	nan	nan
+nan	مواد اعلانية رقمية ذات ظهور على منصات التواصل الاجتماعي ومحركات البحث 
+Digital-Social/biddable Platforms 	1000	1.5%	15	4	nan	nan	nan
+nan	اعلانات رقمية مؤتمتة 
+Digital-programmatic 	0	1.5%	0	0	nan	nan	nan
+nan	KSA VAT (15%) 	1015	15%	152.25	40.6	nan	nan	nan
+nan	Total Payable (including agency fees)	nan	nan	1167.25	311.26666666666665	nan	nan	nan
+nan	Note: All digital amounts in the above table include adserving fees and MOAT Tracking estimations	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	PO 102926	1167.25	 	nan	 	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	Bill of quantities summary	nan	nan	nan	nan	nan	nan	nan
+nan	nan	nan	nan	nan	nan	nan	nan	nan
+nan	العنصر
+Item	الكمية
+Quantity	UOM	Prices SAR	Prices USD	nan	nan	nan
+nan	إجمالي التفاعلات
+Total Engagements	300000	Engagements	1000	266.6666666666667	nan	nan	nan
+nan	إجمالي الوصول
+Total Reach and Impressions	3	Million unique users	nan	nan	nan	nan	nan
+nan	nan	6.6	Million impressions	nan	nan	nan	nan	nan
+nan	إجمالي مشاركات
+Total Participation Entries	10000	Competition entries	nan	nan	nan	nan	nan
+nan	إجمالي الحضور
+Event Attendance	750	Attendees across all markets	nan	nan	nan	nan	nan
+nan	Clicks 	0	0	0	0	nan	nan	nan
+nan	Book now 	0	0	0	0	nan	nan	nan
+nan	Total Price	nan	nan	1000	266.6666666666667	nan	nan	nan
+nan	Agency Fees	nan	nan	15	4	nan	nan	nan
+nan	15% KSA VAT	nan	nan	152.25	40.6	nan	nan	nan
+nan	5% WHT	nan	nan	nan	nan	nan	nan	nan
+nan	Total Price including 5% WHT	nan	nan	1167.25	311.2666666666667	nan	nan	nan

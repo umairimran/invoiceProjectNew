@@ -17,7 +17,9 @@ from google import genai
 from google.genai import types
 import openpyxl
 import pandas as pd
-
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 # Import these libraries when you're ready to implement the functions
 # import pytesseract
 # from PIL import Image
@@ -323,9 +325,16 @@ def validate_job_checklist(job: Dict[str, Any]) -> Dict[str, any]:
         else:
             missing_items.append("7- multiple job orders found, only one is required")
 
+    # Check 4: Proof of Ads - must not be empty
+    print("Checklist:", checklist)
+    proof_of_ads = checklist.get("performance_proof", [])
+    if not proof_of_ads or len(proof_of_ads) == 0:
+        missing_items.append("8- the proof of ads (performance proof) has not been attached")
+    print("Proof of Ads:", proof_of_ads)
+    print("Missing items:", missing_items)
     # Determine overall compliance
     is_compliant = len(missing_items) == 0
-    
+
     # Set review outcomes
     if is_compliant:
         initial_review_outcome = "All required documents are present and valid."
@@ -334,7 +343,7 @@ def validate_job_checklist(job: Dict[str, Any]) -> Dict[str, any]:
         missing_items_text = "; ".join(missing_items)
         initial_review_outcome = f"Missing or incorrect documents: {missing_items_text}"
         final_review_outcome = "Not Approved"
-
+    print("Initial review outcome:", initial_review_outcome)
     return {
         "is_compliant": is_compliant,
         "missing_items": missing_items,
@@ -368,20 +377,11 @@ def gemini_api_function(prompt: str, schema: dict):
 
     return response.parsed  # This will be a Python dict (valid JSON)
 
-def extract_agency_details_from_invoices(invoices_text_extracted: list, agency_invoices: list):
-    """
-    Extracts agency details from a list of invoice texts using a Gemini API.
-
-    Args:
-        invoices_text_extracted (list): A list of strings, where each string is the extracted text from a PDF invoice.
-        agency_invoices (list): A list of dictionaries, where each dictionary represents an invoice
-                                and contains a "file_path" key indicating the path to the PDF file.
-
-    Returns:
-        A dictionary containing the extracted details and a summary.
-        Returns a fallback message if less than three invoices are provided.
-    """
+def extract_agency_details_from_invoices(
+    invoices_text_extracted: List[str], agency_invoices: List[Dict[str, Any]]
+) -> Dict[str, Any]:
     if len(invoices_text_extracted) < 3:
+        logger.warning("Received fewer than 3 invoices. Returning fallback response.")
         return {
             "status": "fallback",
             "message": "Cannot process AI details with less than three invoices.",
@@ -396,47 +396,62 @@ def extract_agency_details_from_invoices(invoices_text_extracted: list, agency_i
             "project_code": {"type": "string", "description": "e.g., PR24|71-30%"},
             "campaign_name": {"type": "string"},
             "total_amount": {"type": "number"},
-            "percentage": {"type": "string", "description": "Must be one of: 20%, 30%, 50%", "enum": ["20%", "30%", "50%"]}
+            "percentage": {
+                "type": "string",
+                "description": "Must be one of: 20%, 30%, 50%",
+                "enum": ["20%", "30%", "50%"]
+            }
         },
-        "required": ["agency_invoice_number", "project_code", "campaign_name", "total_amount", "percentage"]
+        "required": [
+            "agency_invoice_number",
+            "project_code",
+            "campaign_name",
+            "total_amount",
+            "percentage"
+        ]
     }
 
-    extracted_details_list = []
-    total_amount = 0
-    invoice_details = []
-    file_names = []
+    extracted_details_list: List[Dict[str, Any]] = []
+    total_amount: float = 0.0
+    invoice_details: List[str] = []
+    file_names: List[str] = []
 
     for i, text in enumerate(invoices_text_extracted):
-        invoice_doc = agency_invoices[i]
-        original_file_name = invoice_doc.get("original_filename", invoice_doc.get("file_path", "unknown file"))
+        invoice_doc = agency_invoices[i] if i < len(agency_invoices) else {}
+        original_file_name = invoice_doc.get(
+            "original_filename",
+            invoice_doc.get("file_path", f"invoice_{i+1}.pdf")
+        )
         file_names.append(original_file_name)
-        
-        prompt = f"""
-        Extract the following details from the invoice text below. The original invoice file name is '{original_file_name}'.
 
-        The 'invoice percentage' value is very important and MUST be one of the following values: 20%, 30%, or 50%.
+        prompt = (
+            f"Extract the following details from the invoice text. "
+            f"The original invoice file name is '{original_file_name}'.\n\n"
+            "The 'invoice percentage' MUST be one of: 20%, 30%, or 50%.\n\n"
+            "Search order:\n"
+            "1. Check the file name for 20%, 30%, or 50%.\n"
+            "2. If not in file name, check the invoice text.\n\n"
+            "Return the first valid value found. "
+            "If none are found, do not return a percentage.\n\n"
+            "Invoice text:\n---\n"
+            f"{text}\n---"
+        )
 
-        To find the percentage, follow these steps in order:
-        1. **First, check the file name:** Look for '20%', '30%', or '50%' in the file name '{original_file_name}'. If you find it, use that value and stop searching.
-        2. **If not in the file name, then check the invoice text:** Search the text body of the invoice for '20%', '30%', or '50%'.
-
-        Please return the first value you find based on this priority. If you cannot find one of these three values in either the filename or the text, do not return a percentage.
-
-        Invoice text:
-        ---
-        {text}
-        ---
-        """
         try:
             details = gemini_api_function(prompt, invoice_schema)
+            if not all(k in details for k in invoice_schema["required"]):
+                raise ValueError(f"Incomplete details returned: {details}")
             details["file_name"] = original_file_name
             extracted_details_list.append(details)
-            total_amount += details.get("total_amount", 0)
-            if "agency_invoice_number" in details and "percentage" in details:
-                invoice_details.append(f"{details['agency_invoice_number']} - {details['percentage']}")
+            total_amount += float(details.get("total_amount", 0) or 0)
+            if details.get("agency_invoice_number") and details.get("percentage"):
+                invoice_details.append(
+                    f"{details['agency_invoice_number']} - {details['percentage']}"
+                )
         except Exception as e:
-            print(f"Error processing invoice {original_file_name} with Gemini API: {e}")
-            # Optionally, handle the error, e.g., by appending an error entry
+            logger.exception(
+                f"Error processing invoice '{original_file_name}' with Gemini API."
+            )
             extracted_details_list.append({
                 "file_name": original_file_name,
                 "error": str(e)
@@ -451,18 +466,7 @@ def extract_agency_details_from_invoices(invoices_text_extracted: list, agency_i
             "file_names": file_names
         }
     }
-
-
 def extract_po_details_from_job_order(job_order_docs: list):
-    """
-    Extracts PO details from a job order PDF.
-
-    Args:
-        job_order_docs (list): A list of job order documents. Should contain one PDF.
-
-    Returns:
-        A dictionary containing the extracted PO number and PO amount.
-    """
     if not job_order_docs:
         return {}
 
@@ -516,30 +520,110 @@ def extract_po_details_from_job_order(job_order_docs: list):
         print(f"Error processing Job Order {original_file_name} with Gemini API: {e}")
         return {"error": f"AI processing failed for {original_file_name}"}
 
-
 def extract_media_plan_details(approved_quotation_docs: list):
     """
-    Extracts media plan details from the approved quotation Excel file.
+    Given a list of approved_quotation_docs (each a dict with at least 'original_filename' and 'file_path'),
+    this function identifies the correct media plan Excel file to use for AI extraction.
 
-    Args:
-        approved_quotation_docs (list): A list of approved quotation documents.
-
-    Returns:
-        A dictionary containing the extracted media plan details.
+    The function will:
+    - List all media plan Excel files found, with their names.
+    - Use AI to determine which file is the "after job" (actualized) media plan, and which is the "before job" (approved) media plan,
+      but NOT just by conventional naming, but by asking the AI to reason based on the file names and any available context.
+    - Extract details ONLY from the "after job" (actualized) media plan.
+    - If only one media plan is found, use that.
+    - If none are found, return {}.
+    - The input/output signature remains unchanged.
     """
-    media_plan_doc = None
-    for doc in approved_quotation_docs:
-        original_filename = doc.get("original_filename", "").lower()
-        if "media plan" in original_filename and original_filename.endswith(('.xlsx', '.xls')):
-            media_plan_doc = doc
-            break
 
-    if not media_plan_doc:
+    # Step 1: Find all media plan Excel files in approved_quotation_docs
+    media_plan_files = []
+    for doc in approved_quotation_docs:
+        original_filename = doc.get("original_filename", "") or ""
+        lower_filename = original_filename.lower()
+        if "media plan" in lower_filename and lower_filename.endswith(('.xlsx', '.xls')):
+            media_plan_files.append({
+                "doc": doc,
+                "original_filename": original_filename,
+                "file_path": doc.get("file_path")
+            })
+
+    if not media_plan_files:
         print("Media plan Excel file not found in approved_quotation.")
         return {}
 
-    file_path = media_plan_doc.get("file_path")
-    original_file_name = media_plan_doc.get("original_filename", file_path)
+    # If only one media plan, use it
+    if len(media_plan_files) == 1:
+        selected_doc = media_plan_files[0]["doc"]
+        selected_filename = media_plan_files[0]["original_filename"]
+    else:
+        # Step 2: Use AI to determine which file is the "after job" (actualized) media plan
+        # Prepare a list of filenames for the prompt
+        filenames_list = [f"{i+1}: {f['original_filename']}" for i, f in enumerate(media_plan_files)]
+        filenames_text = "\n".join(filenames_list)
+
+        ai_selection_prompt = f"""
+You are given a list of media plan Excel files related to a job. The files may include:
+- A media plan that was approved before the job started ("approved" or "pre-job" media plan)
+- A media plan that was filled after the job was completed ("actualized" or "post-job" media plan)
+The file names may contain words like "approved", "actualized", "final", "media plan", etc.
+
+Here are the file names:
+{filenames_text}
+
+Your task:
+- Use your reasoning and world knowledge to determine which file is the "after job" (actualized or post-job) media plan. 
+- Do NOT rely only on conventional naming. If the names are ambiguous, use your best judgment and explain your reasoning.
+- Respond in the following JSON format:
+{{
+  "after_job_media_plan_number": <number of the file that is the after-job (actualized) media plan, 1-based>,
+  "explanation": "<brief explanation of your reasoning>"
+}}
+"""
+
+        try:
+            # Use Gemini or other LLM to select the correct file index (1-based) and provide reasoning
+            ai_response = gemini_api_function(ai_selection_prompt, {
+                "type": "object",
+                "properties": {
+                    "after_job_media_plan_number": {
+                        "type": "integer",
+                        "description": "The number (1-based) of the file that is the after-job (actualized) media plan."
+                    },
+                    "explanation": {
+                        "type": "string",
+                        "description": "A brief explanation of the reasoning for the selection."
+                    }
+                },
+                "required": ["after_job_media_plan_number", "explanation"]
+            })
+            # Parse the response to get the index
+            selected_index = None
+            if isinstance(ai_response, dict) and "after_job_media_plan_number" in ai_response:
+                try:
+                    selected_index = int(ai_response["after_job_media_plan_number"]) - 1
+                except Exception:
+                    selected_index = 0
+            else:
+                selected_index = 0  # fallback
+
+            if selected_index is None or not (0 <= selected_index < len(media_plan_files)):
+                selected_index = 0  # fallback
+
+            selected_doc = media_plan_files[selected_index]["doc"]
+            selected_filename = media_plan_files[selected_index]["original_filename"]
+
+            # Optionally, print or log the AI's explanation for audit
+            explanation = ai_response.get("explanation", "")
+            print(f"AI selected media plan file #{selected_index+1}: {selected_filename}. Reason: {explanation}")
+
+        except Exception as e:
+            print(f"Error selecting after-job media plan with AI: {e}")
+            # Fallback: use the last file (often actualized/final)
+            selected_doc = media_plan_files[-1]["doc"]
+            selected_filename = media_plan_files[-1]["original_filename"]
+
+    file_path = selected_doc.get("file_path")
+    original_file_name = selected_doc.get("original_filename", file_path)
 
     excel_data = read_excel_file(file_path)
     if not excel_data:
@@ -549,7 +633,9 @@ def extract_media_plan_details(approved_quotation_docs: list):
     excel_text = ""
     for row in excel_data:
         excel_text += "\t".join([str(cell) if cell is not None else "" for cell in row]) + "\n"
-
+    # Save the excel_text to a text file for inspection
+    with open("media_plan_excel_text.txt", "w", encoding="utf-8") as f:
+        f.write(excel_text)
     media_plan_schema = {
         "type": "object",
         "properties": {
@@ -569,29 +655,39 @@ def extract_media_plan_details(approved_quotation_docs: list):
     }
 
     prompt = f"""
-    You are an extremely precise financial analyst extracting data from an Excel-based Media Plan.
-    The original file name is '{original_file_name}'.
-    
-    The content of the Excel sheet is provided below. Each row is separated by a newline, and columns by a tab.
+You are an extremely precise financial analyst extracting data from an Excel-based Media Plan.
+The original file name is '{original_file_name}'.
 
-    {excel_text}
+The content of the Excel sheet is provided below. Each row is separated by a newline, and columns by a tab.
 
-    **CRITICAL INSTRUCTIONS FOR EXTRACTION:**
-    - **ALL NUMERICAL VALUES MUST BE EXTRACTED EXACTLY AS THEY APPEAR OR AS THEIR PRECISE SUM.** Do not round or approximate any numbers.
-    - If a field is not explicitly found, leave it out of the JSON response if it's not marked as required in the schema.
+{excel_text}
 
-    Extract the following details:
-    - **Medium:** Identify the type(s) of media. Look for entries with associated budget/cost. If multiple types are present, combine them with commas (e.g., 'Digital, TV, Print').
-    - **Net Media Cost:** Locate the 'Net Media Cost' column and sum all numerical values found under it.
-    - **Agency Fees:** Locate the 'Agency Fee' column and sum all numerical values found under it.
-    - **Taxes Amount:** Find the total taxes amount, specifically looking for labels like 'Vat Ksa' or 'KSA VAT'. Extract the exact numerical value.
-    - **Third Party Cost:** Look for 'Other 3rd Party Fee/Cost' or similar. If a value is available, use it exactly. If not found, output 0.
-    - **Media Plan Total Amount:** Find the 'Total Payable (including agency fees)' or similar grand total. Extract the exact numerical value.
-    - **Market Type (BU/Markets):** Classify the market based on the 'Geotargeting' column. It must be one of: 'A/E', 'APAC', 'DOMESTIC' (use 'DOMESTIC' if 'Saudi Arabia' or 'KSA' is explicitly mentioned in Geo-targeting), 'COE', or 'MEA'. Prioritize these exact classifications.
-    - **Period Month:** Extract the period month from the top section of the Excel sheet, typically a date range or month-year (e.g., "Sep 2024 - Apr 2025").
+**CRITICAL INSTRUCTIONS FOR EXTRACTION:**
+- **ALL NUMERICAL VALUES MUST BE EXTRACTED EXACTLY AS THEY APPEAR OR AS THEIR PRECISE SUM.** Do not round or approximate any numbers.
+- If a field is not explicitly found, leave it out of the JSON response if it's not marked as required in the schema.
 
-    Provide the extracted information in a structured JSON format matching the schema. Adhere strictly to the data types defined in the schema.
-    """
+Extract the following details:
+- **Medium:** Identify the type(s) of media by matching the following exact English names from the "Total Budget by Platform" section of the Excel sheet:
+    - "Television"
+    - "Radio"
+    - "Print"
+    - "Out of home – Indoor – In malls"
+    - "Inflight"
+    - "Cinema"
+    - "Digital non biddable"
+    - "Digital-Social/biddable Platforms"
+    - "Digital-programmatic"
+  Only include a type if it has an associated budget or cost greater than zero. If multiple types are present, combine them with commas (e.g., "Digital non biddable, Television, Print"). Use these exact English names as your output values.
+- **Net Media Cost:** Locate the 'Net Media Cost' column and sum all numerical values found under it.
+- **Agency Fees:** Locate the 'Agency Fee' column and sum all numerical values found under it.
+- **Taxes Amount:** Find the total taxes amount, specifically looking for labels like 'Vat Ksa' or 'KSA VAT'. Extract the exact numerical value.
+- **Third Party Cost:** Look for 'Other 3rd Party Fee/Cost' or similar. If a value is available, use it exactly. If not found, output 0.
+- **Media Plan Total Amount:** Find the 'Total Payable (including agency fees)' or similar grand total. Extract the exact numerical value.
+- **Market Type (BU/Markets):** Classify the market based on the 'Geotargeting' column. It must be one of: 'A/E', 'APAC', 'DOMESTIC' (use 'DOMESTIC' if 'Saudi Arabia' or 'KSA' is explicitly mentioned in Geo-targeting), 'COE', or 'MEA'. Prioritize these exact classifications.
+- **Period Month:** Extract the period month from the top section of the Excel sheet, typically a date range or month-year (e.g., "Sep 2024 - Apr 2025").
+
+Provide the extracted information in a structured JSON format matching the schema. Adhere strictly to the data types defined in the schema.
+"""
 
     try:
         details = gemini_api_function(prompt, media_plan_schema)
@@ -601,37 +697,53 @@ def extract_media_plan_details(approved_quotation_docs: list):
         return {"error": f"AI processing failed for {original_file_name}"}
 
 
-def extract_invoices_text(invoices: list) -> list:
-        """
-        Extract text content from a list of invoice PDF files.
-        """
-        extracted_texts = []
-        if not invoices or not isinstance(invoices, list):
-            return extracted_texts
+def extract_invoices_text(invoices: List[Dict]) -> List[str]:
+    """
+    Extract text content from a list of invoice PDF files.
 
-        for invoice in invoices:
-            file_path = invoice.get("file_path")
-            if not file_path or not isinstance(file_path, str):
-                continue  # Skip if file_path is missing or not a string
+    Args:
+        invoices (List[Dict]): List of dicts with at least a "file_path" key.
 
-            try:
-                with pdfplumber.open(file_path) as pdf:
-                    text = ""
-                    for page in pdf.pages:
-                        text += page.extract_text()
-                    extracted_texts.append(text)
-            except Exception as e:
-                print(f"Error processing {file_path}: {e}")
-                continue  # Skip if there's an error processing the file
+    Returns:
+        List[str]: Extracted text from each invoice (empty string if extraction fails).
+    """
+    extracted_texts: List[str] = []
 
+    if not invoices or not isinstance(invoices, list):
+        logger.warning("Invalid input provided to extract_invoices_text. Returning empty list.")
         return extracted_texts
 
+    for invoice in invoices:
+        file_path = invoice.get("file_path")
+
+        if not file_path or not isinstance(file_path, str):
+            logger.warning(f"Skipping invoice with invalid file_path: {invoice}")
+            extracted_texts.append("")  # preserve alignment
+            continue
+
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            extracted_texts.append("")
+            continue
+
+        try:
+            with pdfplumber.open(file_path) as pdf:
+                pages_text = [page.extract_text() or "" for page in pdf.pages]
+                text = "\n".join(pages_text).strip()
+                extracted_texts.append(text)
+                if not text:
+                    logger.warning(f"No text extracted from {file_path} (possibly scanned image).")
+        except Exception as e:
+            logger.exception(f"Error processing {file_path}")
+            extracted_texts.append("")
+    
+    return extracted_texts
 def read_excel_file(file_path: str) -> Optional[List[List[Any]]]:
     """
     Reads the first sheet of an Excel file and returns its content as a list of lists.
     """
     try:
-        df = pd.read_excel(file_path, sheet_name=0, header=None)
+        df = pd.read_excel(file_path, sheet_name=0, header=None) 
         return df.values.tolist()
     except Exception as e:
         print(f"Error reading Excel file {file_path}: {e}")

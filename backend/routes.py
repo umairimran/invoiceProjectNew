@@ -552,11 +552,6 @@ async def get_dashboard_stats():
         # Count total jobs (these are the invoices/jobs)
         total_jobs = await jobs_collection.count_documents({})
         
-        # Count pending jobs (only jobs with status 'pending')
-        pending_jobs = await jobs_collection.count_documents({
-            "status": "pending"
-        })
-        
         # Count compliant jobs
         compliant_jobs = await jobs_collection.count_documents({
             "status": "Compliant"
@@ -571,7 +566,6 @@ async def get_dashboard_stats():
             "total_clients": total_clients,
             "total_agencies": total_agencies,
             "total_invoices": total_jobs,
-            "pending_invoices": pending_jobs,
             "compliant_jobs": compliant_jobs,
             "non_compliant_jobs": non_compliant_jobs
         }

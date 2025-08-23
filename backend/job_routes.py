@@ -56,7 +56,7 @@ async def create_job(
         description=created_job.get("description"),
         start_date=created_job.get("start_date"),
         end_date=created_job.get("end_date"),
-        status=created_job.get("status", "pending"),  # Default to pending if status is missing
+        status=created_job.get("status", "Not Compliant"),  # Default to Not Compliant if status is missing
         review=created_job["review"],
         checklist=created_job["checklist"],
         created_by="Admin",
@@ -94,6 +94,15 @@ async def read_jobs(
             "performance_proof": []
         })
         
+        # Map legacy statuses to new simplified statuses
+        legacy_status = job.get("status", "pending")
+        if legacy_status in ["pending", "in_progress", "completed", "not_compliant"]:
+            mapped_status = "Not Compliant"
+        elif legacy_status == "Compliant":
+            mapped_status = "Compliant"
+        else:
+            mapped_status = "Not Compliant"  # Default fallback
+        
         jobs.append(Job(
             id=str(job["_id"]),
             agency_id=job["agency_id"],
@@ -101,7 +110,7 @@ async def read_jobs(
             description=job.get("description"),
             start_date=job.get("start_date"),
             end_date=job.get("end_date"),
-            status=job.get("status", "pending"),  # Default to pending if status is missing
+            status=mapped_status,  # Use mapped status
             review=review,
             checklist=checklist,
             created_by=job["created_by"],
@@ -133,6 +142,15 @@ async def read_job(
             "performance_proof": []
         })
         
+        # Map legacy statuses to new simplified statuses
+        legacy_status = job.get("status", "pending")
+        if legacy_status in ["pending", "in_progress", "completed", "not_compliant"]:
+            mapped_status = "Not Compliant"
+        elif legacy_status == "Compliant":
+            mapped_status = "Compliant"
+        else:
+            mapped_status = "Not Compliant"  # Default fallback
+        
         return Job(
             id=str(job["_id"]),
             agency_id=job["agency_id"],
@@ -140,7 +158,7 @@ async def read_job(
             description=job.get("description"),
             start_date=job.get("start_date"),
             end_date=job.get("end_date"),
-            status=job.get("status", "pending"),  # Default to pending if status is missing
+            status=mapped_status,  # Use mapped status
             review=review,
             checklist=checklist,
             created_by=job["created_by"],
@@ -173,6 +191,10 @@ async def update_job(
     
     # Basic fields update
     update_data = {k: v for k, v in job_update.items() if k in allowed_fields}
+    
+    print(f"Job update request: {job_update}")
+    print(f"Allowed fields update data: {update_data}")
+    print(f"Status being updated to: {update_data.get('status')}")
     
     # Handle review update if provided
     if "review" in job_update:
@@ -341,6 +363,9 @@ async def upload_document_to_job(
         }}
     )
     
+    # Automatically process documents and update job status
+    await process_job_documents_and_update_status(job_id)
+    
     return document
 
 
@@ -451,12 +476,16 @@ async def run_ai_process(job_id: str):
     
     # Step 1: Get the job details
     job = await jobs_collection.find_one({"_id": object_id})
-    print((job))
+    
  
     # Process agency invoices
     agency_invoices = job.get("checklist", {}).get("agency_invoice", [])
     invoices_text_extracted = extract_invoices_text(agency_invoices)
     invoice_details = extract_agency_details_from_invoices(invoices_text_extracted, agency_invoices)
+    
+
+
+
     
     # Process job order (PO)
     job_order_docs = job.get("checklist", {}).get("job_order", [])
@@ -527,6 +556,12 @@ async def run_ai_process(job_id: str):
     
     # Update the job with the extracted details
     update_data = {"review": final_review_data}
+    
+    # Also update the status based on validation result
+    new_status = "Compliant" if validation_result["is_compliant"] else "Not Compliant"
+    update_data["status"] = new_status
+    update_data["updated_at"] = datetime.utcnow()
+    
     updated_job = await jobs_collection.find_one_and_update(
         {"_id": object_id},
         {"$set": update_data},
@@ -540,3 +575,44 @@ async def run_ai_process(job_id: str):
     updated_job["id"] = str(updated_job["_id"])
     
     return Job(**updated_job)
+
+
+async def process_job_documents_and_update_status(job_id: str):
+    """
+    Automatically process job documents and update compliance status
+    """
+    try:
+        # Get the job
+        job = await jobs_collection.find_one({"_id": ObjectId(job_id)})
+        if not job:
+            return
+        
+        # Run AI processing to extract data
+        await process_job_documents(job_id)
+        
+        # Get updated job with new review data
+        updated_job = await jobs_collection.find_one({"_id": ObjectId(job_id)})
+        if not updated_job:
+            return
+        
+        # Validate compliance based on documents
+        from ai_processor import validate_job_checklist
+        validation_result = validate_job_checklist(updated_job)
+        
+        # Determine new status
+        new_status = "Compliant" if validation_result["is_compliant"] else "Not Compliant"
+        
+        # Update job status if it changed
+        if updated_job.get("status") != new_status:
+            await jobs_collection.update_one(
+                {"_id": ObjectId(job_id)},
+                {"$set": {
+                    "status": new_status,
+                    "updated_at": datetime.utcnow()
+                }}
+            )
+            print(f"Job {job_id} status updated to: {new_status}")
+        
+    except Exception as e:
+        print(f"Error processing job {job_id}: {str(e)}")
+        # Don't raise error to avoid breaking document upload

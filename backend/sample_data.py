@@ -65,7 +65,7 @@ async def create_comprehensive_test_job():
         "description": "A single job with a full review and checklist.",
         "start_date": datetime.utcnow(),
         "end_date": datetime.utcnow(),
-        "status": "pending",
+        "status": "Not Compliant",
         "review": {
             "market_bu": "MENA",
             "agency_invoice_number": "PR24|71-30%, PR25|80-20%",
