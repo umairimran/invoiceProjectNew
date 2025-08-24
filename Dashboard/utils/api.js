@@ -321,7 +321,7 @@ export const agenciesAPI = {
     formData.append('file', file);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/upload/agency_rate_card/${agencyCode}`, {
+      const response = await fetch(`${API_BASE_URL}/upload/rate_card/${agencyCode}`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -634,7 +634,6 @@ export const dashboardAPI = {
         total_clients: 0,
         total_agencies: 0,
         total_invoices: 0,
-        pending_invoices: 0,
         compliant_jobs: 0,
         non_compliant_jobs: 0
       };

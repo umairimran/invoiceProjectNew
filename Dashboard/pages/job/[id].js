@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
 import { jobsAPI } from '../../utils/api';
@@ -25,37 +25,38 @@ export default function JobDetailsPage() {
     { id: 'performance_proof', name: 'Performance Proof', icon: 'fas fa-chart-line' }
   ];
 
-  // Fetch job data
-  useEffect(() => {
-    const fetchJobData = async () => {
-      if (!id) return;
+  // Fetch job data function
+  const fetchJobData = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
       
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const jobData = await jobsAPI.getById(id);
-        
-        if (jobData) {
-          setJob(jobData);
-          // Initialize form data with job data
-          setFormData({
-            ...jobData,
-            review: jobData.review || {}
-          });
-        } else {
-          setError('Job not found');
-        }
-      } catch (err) {
-        console.error('Error fetching job data:', err);
-        setError(`Failed to load job details: ${err.message}`);
-      } finally {
-        setIsLoading(false);
+      const jobData = await jobsAPI.getById(id);
+      
+      if (jobData) {
+        setJob(jobData);
+        // Initialize form data with job data
+        setFormData({
+          ...jobData,
+          review: jobData.review || {}
+        });
+      } else {
+        setError('Job not found');
       }
-    };
-
-    fetchJobData();
+    } catch (err) {
+      console.error('Error fetching job data:', err);
+      setError(`Failed to load job details: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
+
+  // Fetch job data on component mount
+  useEffect(() => {
+    fetchJobData();
+  }, [fetchJobData]);
 
   // Handle form input change
   const handleInputChange = (e, section = null) => {
@@ -87,6 +88,11 @@ export default function JobDetailsPage() {
       setJob(updatedJob);
       setIsEditing(false);
       setSuccessMessage('Job updated successfully');
+      
+      // Automatically refresh job data to show the latest information
+      setTimeout(() => {
+        fetchJobData();
+      }, 1000);
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -143,6 +149,11 @@ export default function JobDetailsPage() {
       missingItems.push("7- multiple job orders found, only one is required");
     }
     
+    // Check for Performance Proof (Proof of Ads)
+    if (!checklist.performance_proof || checklist.performance_proof.length === 0) {
+      missingItems.push("8- the proof of ads (performance proof) has not been attached");
+    }
+    
     // Generate initial review outcome
     const initialReviewOutcome = missingItems.length > 0 
       ? `Missing or incorrect documents: ${missingItems.join("; ")}`
@@ -168,9 +179,23 @@ export default function JobDetailsPage() {
         review: mergedReview
       };
       
-      setJob(updatedJobData);
-      setFormData(updatedJobData);
+      console.log('Updating job with status:', updatedJobData.status);
+      console.log('Final review outcome:', finalReviewOutcome);
+      
+      // Update the job in the database with the new status and review
+      const finalUpdatedJob = await jobsAPI.update(id, updatedJobData);
+      
+      console.log('Job updated successfully:', finalUpdatedJob);
+      console.log('New status from backend:', finalUpdatedJob.status);
+      
+      setJob(finalUpdatedJob);
+      setFormData(finalUpdatedJob);
       setSuccessMessage(`AI processing completed and review generated. Status: ${finalReviewOutcome}`);
+      
+      // Automatically refresh job data to show the latest information
+      setTimeout(() => {
+        fetchJobData();
+      }, 1000);
     } catch (err) {
       console.error('Error running AI process:', err);
       
@@ -185,11 +210,22 @@ export default function JobDetailsPage() {
         }
       };
       
+      console.log('AI failed, updating job with status:', updatedJobData.status);
+      console.log('Final review outcome:', finalReviewOutcome);
+      
       try {
         const updatedJob = await jobsAPI.update(id, updatedJobData);
+        console.log('Job updated successfully (AI failed case):', updatedJob);
+        console.log('New status from backend (AI failed case):', updatedJob.status);
+        
         setJob(updatedJob);
         setFormData(updatedJobData);
         setSuccessMessage(`Review generated based on available documents. Status: ${finalReviewOutcome}`);
+        
+        // Automatically refresh job data to show the latest information
+        setTimeout(() => {
+          fetchJobData();
+        }, 1000);
       } catch (updateErr) {
         console.error('Error updating job with review:', updateErr);
         setError('Failed to update job with review data.');
@@ -229,6 +265,11 @@ export default function JobDetailsPage() {
                            finalReviewOutcome === "Not Approved" ? 'marked as Not Compliant' : 
                            'updated';
       setSuccessMessage(`Job ${statusMessage} successfully`);
+      
+      // Automatically refresh job data to show the latest information
+      setTimeout(() => {
+        fetchJobData();
+      }, 1000);
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -293,6 +334,37 @@ export default function JobDetailsPage() {
               <span className="block sm:inline">{successMessage}</span>
             </div>
           )}
+
+          {/* Job Status Section */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="title">Job Status</h2>
+              <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                job.status === 'Compliant' 
+                  ? 'bg-green-100 text-green-800 border border-green-200' 
+                  : 'bg-red-100 text-red-800 border border-red-200'
+              }`}>
+                <i className={`mr-2 ${
+                  job.status === 'Compliant' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'
+                }`}></i>
+                {job.status}
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600">
+                <strong>Current Status:</strong> {job.status}
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                <strong>Last Updated:</strong> {new Date(job.updated_at).toLocaleString()}
+              </p>
+              {job.review?.final_review_outcome && (
+                <p className="text-sm text-gray-600 mt-2">
+                  <strong>Review Outcome:</strong> {job.review.final_review_outcome}
+                </p>
+              )}
+            </div>
+          </div>
 
           {/* Document Checklist Section */}
           <div className="card">
@@ -511,12 +583,12 @@ export default function JobDetailsPage() {
             </div>
           </form>
 
-          {/* AI Process and Approval Section */}
+          {/* AI Process Section */}
           <div className="card">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
               <div>
-                <h2 className="title mb-2">Process & Approval</h2>
-                <p className="text-gray-600">Complete the document verification process</p>
+                <h2 className="title mb-2">AI Processing</h2>
+                <p className="text-gray-600">Run AI analysis on uploaded documents</p>
               </div>
               <div className="mt-4 md:mt-0">
                 <button 
@@ -529,8 +601,6 @@ export default function JobDetailsPage() {
               </div>
             </div>
             
-
-            
             {/* Warning message when AI process fails due to no documents */}
             {error && error.includes('upload your documents') && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
@@ -538,42 +608,11 @@ export default function JobDetailsPage() {
                   <i className="fas fa-exclamation-triangle text-yellow-600 mr-3 text-lg"></i>
                   <div>
                     <h4 className="font-helveticaBold text-yellow-800 text-lg">Upload documents please</h4>
-                    <p className="text-yellow-700 text-sm mt-1">Please upload the required documents before proceeding with the approval process.</p>
+                    <p className="text-yellow-700 text-sm mt-1">Please upload the required documents before proceeding with the AI process.</p>
                   </div>
                 </div>
               </div>
             )}
-            
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="font-helveticaBold text-lg mb-4">Approval Decision</h3>
-              
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium text-gray-700">Comments to Agency</label>
-                <textarea
-                  name="approval_comments"
-                  rows="3"
-                  className="w-full p-3 border border-gray-300 rounded-lg"
-                  placeholder="Enter any comments or feedback for the agency..."
-                ></textarea>
-              </div>
-              
-              <div className="flex flex-col md:flex-row gap-4 justify-end">
-                <button 
-                  onClick={() => handleApproval(false)}
-                  className="btn bg-orange-500 text-white hover:bg-orange-600"
-                >
-                  <i className="fas fa-undo mr-2"></i>
-                  Return for Revision
-                </button>
-                <button 
-                  onClick={() => handleApproval(true)}
-                  className="btn bg-green-600 text-white hover:bg-green-700"
-                >
-                  <i className="fas fa-check mr-2"></i>
-                  Approve Job
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       ) : null}

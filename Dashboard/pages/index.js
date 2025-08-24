@@ -3,6 +3,8 @@ import Layout from '../components/Layout';
 import MetricCard from '../components/MetricCard';
 import BarChart from '../components/charts/BarChart';
 import PieChart from '../components/charts/PieChart';
+import BUMarketChart from '../components/charts/BUMarketChart';
+import FinancialValueChart from '../components/charts/FinancialValueChart';
 import ClientsTable from '../components/ClientsTable';
 import ClientModal from '../components/ClientModal';
 
@@ -14,7 +16,7 @@ import {
   clientsData 
 } from '../data/dummyData';
 
-import { clientsAPI, agenciesAPI, dashboardAPI } from '../utils/api';
+import { clientsAPI, agenciesAPI, dashboardAPI, jobsAPI } from '../utils/api';
 
 export default function Home() {
   const [clients, setClients] = useState([]);
@@ -24,10 +26,10 @@ export default function Home() {
     total_clients: 0,
     total_agencies: 0,
     total_invoices: 0,
-    pending_invoices: 0,
     compliant_jobs: 0,
     non_compliant_jobs: 0
   });
+  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,6 +59,64 @@ export default function Home() {
           })
         );
         setClients(clientsWithAgencyCounts);
+
+        // Fetch chart data from all agencies through clients
+        try {
+          let allChartData = [];
+          
+          // Get agencies for each client
+          for (const client of clientsWithAgencyCounts) {
+            try {
+              const agencies = await agenciesAPI.getByClient(client.client_code);
+              
+              if (agencies && Array.isArray(agencies)) {
+                for (const agency of agencies) {
+                  try {
+                    const jobs = await jobsAPI.getByAgency(agency.agency_code);
+                    
+                    if (jobs && Array.isArray(jobs)) {
+                      const jobsWithReview = jobs.filter(job => job.review && job.review !== null);
+                      
+                      // Group by BU/Market
+                      const buMarkets = ['A/E', 'APAC', 'DOMESTIC', 'COE', 'MEA'];
+                      buMarkets.forEach(buMarket => {
+                        const buJobs = jobsWithReview.filter(job => job.review?.market_bu === buMarket);
+                        if (buJobs.length > 0) {
+                          const existingMarket = allChartData.find(item => item["BU/Markets"] === buMarket);
+                          if (existingMarket) {
+                            existingMarket["Year-to-date"]["Number of Compliant JO Invoices"] += buJobs.filter(job => job.status === 'Compliant').length;
+                            existingMarket["Year-to-date"]["Number of of Non-Compliant JO Invoices"] += buJobs.filter(job => job.status !== 'Compliant').length;
+                            existingMarket["Year-to-date"]["Value of the Compliant JO Invoices (SAR)"] += buJobs.filter(job => job.status === 'Compliant').reduce((sum, job) => sum + (job.review?.agency_invoice_total_amount || 0), 0);
+                            existingMarket["Year-to-date"]["Value of Non-Compliant JO Invoices (SAR)"] += buJobs.filter(job => job.status !== 'Compliant').reduce((sum, job) => sum + (job.review?.agency_invoice_total_amount || 0), 0);
+                          } else {
+                            allChartData.push({
+                              "BU/Markets": buMarket,
+                              "Year-to-date": {
+                                "Number of Compliant JO Invoices": buJobs.filter(job => job.status === 'Compliant').length,
+                                "Number of of Non-Compliant JO Invoices": buJobs.filter(job => job.status !== 'Compliant').length,
+                                "Value of the Compliant JO Invoices (SAR)": buJobs.filter(job => job.status === 'Compliant').reduce((sum, job) => sum + (job.review?.agency_invoice_total_amount || 0), 0),
+                                "Value of Non-Compliant JO Invoices (SAR)": buJobs.filter(job => job.status !== 'Compliant').reduce((sum, job) => sum + (job.review?.agency_invoice_total_amount || 0), 0),
+                              }
+                            });
+                          }
+                        }
+                      });
+                    }
+                  } catch (error) {
+                    console.error(`Error fetching jobs for agency ${agency.agency_code}:`, error);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error(`Error fetching agencies for client ${client.client_code}:`, error);
+            }
+          }
+          
+          setChartData(allChartData);
+        } catch (error) {
+          console.error('Error fetching chart data:', error);
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -97,7 +157,7 @@ export default function Home() {
 
 
       {/* Metric Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <MetricCard 
           title="Clients" 
           value={dashboardStats.total_clients || 0} 
@@ -116,48 +176,44 @@ export default function Home() {
           icon="fas fa-file-invoice" 
           iconColor="bg-secondary" 
         />
+      </div>
+      
+      {/* Compliance Status Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <MetricCard 
-          title="Ongoing Jobs" 
-          value={dashboardStats.pending_invoices || 0} 
-          icon="fas fa-hourglass-half" 
-          iconColor="bg-secondary"
+          title="Compliant Jobs" 
+          value={dashboardStats.compliant_jobs || 0} 
+          icon="fas fa-check-circle" 
+          iconColor="bg-green-500"
+        />
+        <MetricCard 
+          title="Non-Compliant Jobs" 
+          value={dashboardStats.non_compliant_jobs || 0} 
+          icon="fas fa-exclamation-triangle" 
+          iconColor="bg-red-500"
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+             {/* Charts Row */}
+       <div className="grid grid-cols-1 gap-6 mb-6">
+         <div className="h-80">
+           <BarChart 
+             title="Compliance Status Overview" 
+             data={[
+               { name: 'Compliant', value: dashboardStats.compliant_jobs || 0, fill: '#28a745' },
+               { name: 'Non-Compliant', value: dashboardStats.non_compliant_jobs || 0, fill: '#C21A2C' },
+             ]}
+           />
+         </div>
+       </div>
+
+      {/* New Real Data Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="h-80">
-          <BarChart 
-            title="Compliant vs Non-Compliant Jobs" 
-            data={[
-              { name: 'Compliant', value: dashboardStats.compliant_jobs || 0, fill: '#28a745' },
-              { name: 'Non-Compliant', value: dashboardStats.non_compliant_jobs || 0, fill: '#C21A2C' },
-            ]}
-          />
+          <BUMarketChart data={chartData} />
         </div>
         <div className="h-80">
-          <PieChart 
-            title="Market-wise Analysis" 
-            data={[
-              { name: 'KSA', value: 45, fill: '#C21A2C' },
-              { name: 'UAE', value: 30, fill: '#2D3748' },
-              { name: 'Egypt', value: 15, fill: '#718096' },
-              { name: 'Qatar', value: 10, fill: '#A0AEC0' },
-            ]}
-          />
-        </div>
-        <div className="h-80">
-          <BarChart 
-            title="Spend per Market" 
-            data={spendPerMarketData.map(item => ({
-              name: item.name,
-              value: item.value / 1000,
-              fill: item.name === 'KSA' ? '#C21A2C' : 
-                    item.name === 'UAE' ? '#2D3748' : 
-                    item.name === 'Egypt' ? '#718096' : '#A0AEC0'
-            }))} 
-            customLabel="K$"
-          />
+          <FinancialValueChart data={chartData} />
         </div>
       </div>
 
@@ -186,7 +242,7 @@ export default function Home() {
       <div className="mt-auto pt-6 border-t border-gray-200">
         <div className="flex justify-between items-center">
           <div>
-            <p className="font-signika font-light text-sm text-gray-500">© 2025 Medpush DMCC. All rights reserved.</p>
+            <p className="font-signika font-light text-sm text-gray-500">© 2025 Medpush X MEDPUSH. All rights reserved.</p>
           </div>
           <div className="flex space-x-4">
             <a href="#" className="text-gray-500 hover:text-secondary">

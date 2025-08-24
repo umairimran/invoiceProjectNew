@@ -15,35 +15,13 @@ const JobsList = ({ jobs }) => {
   const getJobStatusDisplay = (job) => {
     if (!job) return { text: 'Unknown', className: 'bg-gray-100 text-gray-800' };
     
-    // First check the job status
+    // Simplified status system - only Compliant or Not Compliant
     if (job.status === 'Compliant') {
       return { text: 'Compliant', className: 'bg-green-100 text-green-800' };
-    } else if (job.status === 'Not Compliant') {
+    } else {
+      // All other statuses (including old ones) are treated as Not Compliant
       return { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
-    } else if (job.status === 'completed') {
-      return { text: 'Completed', className: 'bg-green-100 text-green-800' };
-    } else if (job.status === 'not_compliant') {
-      return { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
-    } else if (job.status === 'in_progress') {
-      return { text: 'In Progress', className: 'bg-yellow-100 text-yellow-800' };
-    } else if (job.status === 'pending') {
-      return { text: 'Pending', className: 'bg-blue-100 text-blue-800' };
     }
-    
-    // Fallback to document-based compliance check
-    if (!job.checklist) return { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
-    const requiredDocs = [
-      'agency_invoice',
-      'approved_quotation',
-      'job_order',
-      'timesheet',
-      'third_party',
-      'performance_proof',
-    ];
-    const hasAllDocs = requiredDocs.every((docType) => job.checklist[docType] && job.checklist[docType].length > 0);
-    return hasAllDocs 
-      ? { text: 'Compliant', className: 'bg-green-100 text-green-800' }
-      : { text: 'Not Compliant', className: 'bg-red-100 text-red-800' };
   };
 
   return (

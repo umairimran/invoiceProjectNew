@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
-import { agenciesAPI, jobsAPI } from '../../utils/api';
+import { agenciesAPI, jobsAPI, clientsAPI } from '../../utils/api';
 import AgencyDetails from '../../components/AgencyDetails';
 import JobsList from '../../components/JobsList';
 import CreateJobModal from '../../components/CreateJobModal';
+import AgencyRateCardManager from '../../components/AgencyRateCardManager';
 
 export default function AgencyDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
   
   const [agency, setAgency] = useState(null);
+  const [client, setClient] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,6 +37,11 @@ export default function AgencyDetailsPage() {
           console.log(`Fetching jobs for agency: ${id}`);
           const jobsData = await jobsAPI.getByAgency(id);
           setJobs(Array.isArray(jobsData) ? jobsData : []);
+          
+          // Fetch client details for this agency
+          console.log(`Fetching client details for client: ${agencyData.client_id}`);
+          const clientData = await clientsAPI.getByCode(agencyData.client_id);
+          setClient(clientData);
         }
       } catch (err) {
         console.error('Error fetching agency data:', err);
@@ -73,6 +80,20 @@ export default function AgencyDetailsPage() {
     }
   };
 
+  // Handle rate card upload
+  const handleRateCardUpload = async (file) => {
+    try {
+      await agenciesAPI.uploadRateCard(id, file);
+      // Refresh agency data to show updated rate card status
+      const updatedAgency = await agenciesAPI.getByCode(id);
+      setAgency(updatedAgency);
+      return true;
+    } catch (error) {
+      console.error('Error uploading rate card:', error);
+      return false;
+    }
+  };
+
   return (
     <Layout title={agency ? `${agency.name} | Agency Details` : 'Agency Details'}>
       <div className="mb-6">
@@ -104,7 +125,15 @@ export default function AgencyDetailsPage() {
       ) : agency ? (
         <>
           {/* Agency Details Section */}
-          <AgencyDetails agency={agency} />
+          <AgencyDetails agency={agency} client={client} />
+          
+          {/* Rate Card Management Section */}
+          <div className="mt-8 mb-6">
+            <AgencyRateCardManager 
+              agency={agency} 
+              onUploadRateCard={handleRateCardUpload} 
+            />
+          </div>
           
           {/* Jobs/Invoices Section */}
           <div className="mt-8">

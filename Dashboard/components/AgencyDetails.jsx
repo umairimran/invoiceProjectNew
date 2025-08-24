@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatDate } from '../utils/helpers';
 
-const AgencyDetails = ({ agency }) => {
+const AgencyDetails = ({ agency, client }) => {
   if (!agency) return null;
 
   return (
@@ -29,11 +29,15 @@ const AgencyDetails = ({ agency }) => {
           <h3 className="font-helveticaBold text-lg mb-3">Client</h3>
           <div className="space-y-2">
             <div>
+              <p className="text-sm text-gray-500">Client Name</p>
+              <p className="font-medium">{client ? client.name : 'Loading...'}</p>
+            </div>
+            <div>
               <p className="text-sm text-gray-500">Client ID</p>
-              <p className="font-medium">{agency.client_id}</p>
+              <p className="font-medium text-gray-600">{agency.client_id}</p>
             </div>
           </div>
-                </div>
+        </div>
         
         {/* Rate Card Info */}
         <div>
@@ -48,7 +52,14 @@ const AgencyDetails = ({ agency }) => {
                     Uploaded
                   </span>
                   {agency.rate_card_file && (
-                    <button className="ml-3 text-blue-600 hover:text-blue-800 text-sm">
+                    <button 
+                      onClick={() => {
+                        const filename = agency.rate_card_file.split('/').pop();
+                        const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/files/${filename}`;
+                        window.open(downloadUrl, '_blank');
+                      }}
+                      className="ml-3 text-blue-600 hover:text-blue-800 text-sm hover:underline"
+                    >
                       <i className="fas fa-download mr-1"></i>
                       Download
                     </button>

@@ -25,11 +25,15 @@ export default function AgencySummaryPage() {
         setError(null);
 
         // Fetch all jobs for this agency
-        const jobs = await jobsAPI.getByAgency(id);
+        const allJobs = await jobsAPI.getByAgency(id);
         
-        if (!jobs || !Array.isArray(jobs)) {
+        if (!allJobs || !Array.isArray(allJobs)) {
           throw new Error('Failed to fetch jobs data');
         }
+
+        // Use all jobs for summary, but only jobs with review object for calculations
+        const jobs = allJobs;
+        const jobsWithReview = allJobs.filter(job => job.review && job.review !== null);
 
         // Calculate date ranges
         const now = new Date();
@@ -50,13 +54,7 @@ export default function AgencySummaryPage() {
 
         // Process each BU/Market
         buMarkets.forEach(buMarket => {
-          const buJobs = jobs.filter(job => job.review?.market_bu === buMarket);
-          
-          // Also include jobs with missing BU/Market in a default category
-          if (buMarket === 'A/E') {
-            const jobsWithNoBU = jobs.filter(job => !job.review?.market_bu || job.review?.market_bu === 'N/A');
-            buJobs.push(...jobsWithNoBU);
-          }
+          const buJobs = jobsWithReview.filter(job => job.review?.market_bu === buMarket);
           
 
           
@@ -155,24 +153,7 @@ export default function AgencySummaryPage() {
           });
         }
 
-        // If no data, show empty structure
-        if (summaryRows.length === 0) {
-          summaryRows.push({
-            "BU/Markets": "A/E",
-            "Year-to-date": {
-              "Number of Compliant JO Invoices": 0,
-              "Number of of Non-Compliant JO Invoices": 0,
-              "Value of the Compliant JO Invoices (SAR)": 0,
-              "Value of Non-Compliant JO Invoices  (SAR)": 0,
-            },
-            lastTwoWeeks: {
-              "Number of Compliant JO Invoices": 0,
-              "Number of of Non-Compliant JO Invoices": 0,
-              "Value of the Compliant JO Invoices (SAR)": 0,
-              "Value of Non-Compliant JO Invoices  (SAR)": 0,
-            },
-          });
-        }
+        // Only show rows if there's actual data - don't show empty default rows
 
         const summaryData = {
           rows: summaryRows,
