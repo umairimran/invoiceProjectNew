@@ -20,7 +20,11 @@ app = FastAPI(title="Documents Verification API")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Update this in production
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        "https://*.vercel.app",   # Vercel domains
+        "https://*.ngrok-free.app" # ngrok domains
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
