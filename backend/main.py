@@ -16,15 +16,15 @@ from models import Role
 
 # Create FastAPI app
 app = FastAPI(title="Documents Verification API")
+from dotenv import load_dotenv
 
-# Configure CORS
+# Load environment variables
+load_dotenv()  # take environment variables from .env
+origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://invoicesproject-pajsiv6n2-umairimrans-projects-de44185d.vercel.app").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Local development
-        "https://*.vercel.app",   # Vercel domains
-        "https://*.ngrok-free.app" # ngrok domains
-    ],
+    allow_origins=["*"],  # Temporarily allow all origins for testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,4 +77,5 @@ async def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="localhost", port=8000, reload=True)
+    # Use 0.0.0.0 instead of localhost to allow external connections
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
