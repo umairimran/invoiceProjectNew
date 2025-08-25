@@ -1,4 +1,5 @@
 // API client for making requests to the backend
+import ngrokFetch from './ngrokFetch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -103,7 +104,7 @@ async function fetchAPI(endpoint, options = {}) {
     console.log(`API Request: ${url}`);
     
     try {
-      const response = await fetch(url, config);
+      const response = await ngrokFetch(url, config);
       
       // Handle error responses
       if (!response.ok) {
@@ -235,7 +236,7 @@ export const clientsAPI = {
     formData.append('file', file);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/upload/rate_card/${clientCode}`, {
+      const response = await ngrokFetch(`${API_BASE_URL}/upload/rate_card/${clientCode}`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -322,7 +323,7 @@ export const agenciesAPI = {
     formData.append('file', file);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/upload/rate_card/${agencyCode}`, {
+      const response = await ngrokFetch(`${API_BASE_URL}/upload/rate_card/${agencyCode}`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -417,7 +418,7 @@ export const jobsAPI = {
     formData.append('metadata', JSON.stringify(metadata));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/documents/${folderType}`, {
+      const response = await ngrokFetch(`${API_BASE_URL}/jobs/${jobId}/documents/${folderType}`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -454,7 +455,7 @@ export const jobsAPI = {
    */
   deleteDocumentFromJob: async (jobId, folderType, documentIndex) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/documents/${folderType}/${documentIndex}`, {
+      const response = await ngrokFetch(`${API_BASE_URL}/jobs/${jobId}/documents/${folderType}/${documentIndex}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
@@ -490,7 +491,7 @@ export const jobsAPI = {
     try {
       console.log(`Running AI process for job ${jobId}`);
       
-      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/run_ai_process`, {
+      const response = await ngrokFetch(`${API_BASE_URL}/jobs/${jobId}/run_ai_process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -615,7 +616,7 @@ export const dashboardAPI = {
     const url = `${API_BASE_URL}/dashboard/stats`;
     
     try {
-      const response = await fetch(url, {
+      const response = await ngrokFetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
