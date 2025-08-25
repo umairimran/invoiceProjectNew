@@ -28,6 +28,8 @@ export default function ClientDetailsPage() {
         // Fetch agencies for this client
         const agenciesData = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/agencies?client_id=${id}`, {
           headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'User-Agent': 'InvoiceApp/1.0',
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           }
         }).then(res => res.json());

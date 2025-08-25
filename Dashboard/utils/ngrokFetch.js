@@ -19,4 +19,17 @@ const ngrokFetch = async (url, options = {}) => {
   return fetch(url, options);
 };
 
+// Override the global fetch to always include ngrok headers
+if (typeof window !== 'undefined') {
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    if (url.includes('ngrok')) {
+      if (!options.headers) options.headers = {};
+      options.headers['ngrok-skip-browser-warning'] = 'true';
+      options.headers['User-Agent'] = 'InvoiceApp/1.0';
+    }
+    return originalFetch(url, options);
+  };
+}
+
 export default ngrokFetch;
