@@ -406,8 +406,7 @@ def extract_agency_details_from_invoices(
             "agency_invoice_number",
             "project_code",
             "campaign_name",
-            "total_amount",
-            "percentage"
+            "total_amount"
         ]
     }
 

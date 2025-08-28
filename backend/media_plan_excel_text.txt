@@ -18,8 +18,8 @@ nan	Partner	Weight	Start	End	Geotargeting	Budget SAR	Budget USD	Impressions
 nan	Bridging Cultures Influencer Marketing Program across three pases:
 BUILD - Buildup Stage Online Engagement (Pre-Visit)
 LAUNCH - During Visit
-SUSTAIN - Post-Visit Engagement	1	2024-10-10 00:00:00	2024-12-30 00:00:00	Australia, Japan, South Korea	1000	266.6666666666667	6600000
-nan	nan	1	nan	Total Net to media 	nan	1000	266.6666666666667	6600000
+SUSTAIN - Post-Visit Engagement	1	2024-10-10 00:00:00	2024-12-30 00:00:00	Australia, Japan, South Korea	799998.75	213333	6600000
+nan	nan	1	nan	Total Net to media 	nan	799998.75	213333	6600000
 nan	nan	nan	nan	nan	nan	nan	nan	nan
 nan	Summary Table Mapped to the Framework agreement description including Taxes and Fees	nan	nan	nan	nan	nan	nan	nan
 nan	Total Budget by Platform	Total	Agency Fee	Fee SAR	Fee USD	nan	nan	nan
@@ -36,16 +36,16 @@ Inflight 	0	0.25%	0	0	nan	nan	nan
 nan	السينما 
 Cinema 	0	0.25%	0	0	nan	nan	nan
 nan	مواد اعلانية رقمية  
-Digital non biddable 	SAR 799,999	1.5%	SAR 12,000	3200	nan	nan	nan
+Digital non biddable 	0	1.5%	0	0	nan	nan	nan
 nan	مواد اعلانية رقمية ذات ظهور على منصات التواصل الاجتماعي ومحركات البحث 
-Digital-Social/biddable Platforms 	1000	1.5%	15	4	nan	nan	nan
+Digital-Social/biddable Platforms 	799998.75	1.5%	11999.981249999999	3199.995	nan	nan	nan
 nan	اعلانات رقمية مؤتمتة 
 Digital-programmatic 	0	1.5%	0	0	nan	nan	nan
-nan	KSA VAT (15%) 	1015	15%	152.25	40.6	nan	nan	nan
-nan	Total Payable (including agency fees)	nan	nan	1167.25	311.26666666666665	nan	nan	nan
+nan	KSA VAT (15%) 	811998.73125	15%	121799.80968749999	32479.949249999998	nan	nan	nan
+nan	Total Payable (including agency fees)	nan	nan	933798.5409375	249012.94425	nan	nan	nan
 nan	Note: All digital amounts in the above table include adserving fees and MOAT Tracking estimations	nan	nan	nan	nan	nan	nan	nan
 nan	nan	nan	nan	nan	nan	nan	nan	nan
-nan	PO 102926	1167.25	 	nan	 	nan	nan	nan
+nan	PO 102926	933798.5409375	 	nan	 	nan	nan	nan
 nan	nan	nan	nan	nan	nan	nan	nan	nan
 nan	Bill of quantities summary	nan	nan	nan	nan	nan	nan	nan
 nan	nan	nan	nan	nan	nan	nan	nan	nan
@@ -53,7 +53,7 @@ nan	العنصر
 Item	الكمية
 Quantity	UOM	Prices SAR	Prices USD	nan	nan	nan
 nan	إجمالي التفاعلات
-Total Engagements	300000	Engagements	1000	266.6666666666667	nan	nan	nan
+Total Engagements	300000	Engagements	799998.75	213333	nan	nan	nan
 nan	إجمالي الوصول
 Total Reach and Impressions	3	Million unique users	nan	nan	nan	nan	nan
 nan	nan	6.6	Million impressions	nan	nan	nan	nan	nan
@@ -63,8 +63,8 @@ nan	إجمالي الحضور
 Event Attendance	750	Attendees across all markets	nan	nan	nan	nan	nan
 nan	Clicks 	0	0	0	0	nan	nan	nan
 nan	Book now 	0	0	0	0	nan	nan	nan
-nan	Total Price	nan	nan	1000	266.6666666666667	nan	nan	nan
-nan	Agency Fees	nan	nan	15	4	nan	nan	nan
-nan	15% KSA VAT	nan	nan	152.25	40.6	nan	nan	nan
+nan	Total Price	nan	nan	799998.75	213333	nan	nan	nan
+nan	Agency Fees	nan	nan	11999.981249999999	3199.995	nan	nan	nan
+nan	15% KSA VAT	nan	nan	121799.80968749999	32479.949249999998	nan	nan	nan
 nan	5% WHT	nan	nan	nan	nan	nan	nan	nan
-nan	Total Price including 5% WHT	nan	nan	1167.25	311.2666666666667	nan	nan	nan
+nan	Total Price including 5% WHT	nan	nan	933798.5409375	249012.94425	nan	nan	nan
