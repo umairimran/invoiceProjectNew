@@ -1,8 +1,11 @@
 import React from 'react';
 import Head from 'next/head';
 import Sidebar from './Sidebar';
+import { useAuth } from '../context/AuthContext';
 
 const Layout = ({ children, title = 'Medpush DMCC Dashboard' }) => {
+  const { user, logout } = useAuth();
+
   return (
     <>
       <Head>
@@ -29,9 +32,21 @@ const Layout = ({ children, title = 'Medpush DMCC Dashboard' }) => {
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-3">
                   <div className="h-8 w-8 rounded-full bg-secondary text-white flex items-center justify-center">
-                    <span className="font-helveticaBold">A</span>
+                    <span className="font-helveticaBold">{user?.username ? user.username.charAt(0).toUpperCase() : 'U'}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-helvetica text-gray-900">{user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-500 font-helvetica">{user?.role || 'Loading...'}</p>
                   </div>
                 </div>
+                <button
+                  onClick={logout}
+                  className="btn btn-sm btn-secondary py-1 px-3 font-helvetica font-medium transition-colors duration-200 flex items-center space-x-2"
+                  title="Logout"
+                >
+                  <i className="fas fa-sign-out-alt mr-1"></i>
+                  <span>Logout</span>
+                </button>
               </div>
             </div>
           </header>

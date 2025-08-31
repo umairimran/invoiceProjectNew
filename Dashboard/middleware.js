@@ -1,26 +1,32 @@
 import { NextResponse } from 'next/server';
 
-// This middleware runs on all requests
-export function middleware(request) {
-  // Clone the request headers
-  const requestHeaders = new Headers(request.headers);
+export default function middleware(req) {
+  const { pathname } = req.nextUrl;
   
-  // Add the ngrok bypass headers
-  requestHeaders.set('ngrok-skip-browser-warning', 'true');
-  requestHeaders.set('User-Agent', 'InvoiceApp/1.0');
-
-  // Return the response with the modified headers
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  // Get auth token from cookies
+  const token = req.cookies.get('auth_token')?.value;
+  
+  // Define public paths that don't require authentication
+  const publicPaths = ['/login'];
+  const isPublicPath = publicPaths.includes(pathname);
+  
+  // If no token and trying to access protected route, redirect to login
+  if (!token && !isPublicPath) {
+    const url = new URL('/login', req.url);
+    url.searchParams.set('from', pathname);
+    return NextResponse.redirect(url);
+  }
+  
+  // If token exists and trying to access login page, redirect to dashboard
+  if (token && isPublicPath) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+  
+  return NextResponse.next();
 }
 
-// Configure which paths this middleware runs on
 export const config = {
   matcher: [
-    // Apply to all API requests
-    '/api/:path*',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

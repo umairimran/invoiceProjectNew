@@ -606,6 +606,70 @@ export const authAPI = {
   },
 };
 
+// Users-related API functions
+export const usersAPI = {
+  /**
+   * Get all users
+   * @returns {Promise<Array>} - List of users
+   */
+  getAll: async () => {
+    return fetchAPI('/users');
+  },
+
+  /**
+   * Get a user by ID
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} - User data
+   */
+  getById: async (userId) => {
+    return fetchAPI(`/users/${userId}`);
+  },
+
+  /**
+   * Create a new user
+   * @param {Object} userData - User data (username, email, password, role)
+   * @returns {Promise<Object>} - Created user
+   */
+  create: async (userData) => {
+    return fetchAPI('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  /**
+   * Update a user
+   * @param {string} userId - User ID
+   * @param {Object} userData - User data to update
+   * @returns {Promise<Object>} - Updated user
+   */
+  update: async (userId, userData) => {
+    return fetchAPI(`/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  /**
+   * Delete a user
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} - Response message
+   */
+  delete: async (userId) => {
+    return fetchAPI(`/users/${userId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Get current user profile
+   * @returns {Promise<Object>} - Current user data
+   */
+  getProfile: async () => {
+    return fetchAPI('/users/me');
+  }
+};
+
 // Dashboard-related API functions
 export const dashboardAPI = {
   /**

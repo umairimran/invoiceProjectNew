@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: 'fas fa-tachometer-alt' },
-    { name: 'Clients', path: '/clients', icon: 'fas fa-users' }
+    { name: 'Clients', path: '/clients', icon: 'fas fa-users' },
+    { name: 'Users', path: '/users', icon: 'fas fa-user-cog' }
   ];
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
+  };
+  
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -62,19 +69,23 @@ const Sidebar = () => {
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className={`flex items-center ${isCollapsed ? 'hidden' : 'block'}`}>
             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white mr-2">
-              <span className="font-helveticaBold">A</span>
+              <span className="font-helveticaBold">{user?.username ? user.username.charAt(0).toUpperCase() : 'U'}</span>
             </div>
             <div>
-              <p className="text-sm font-helvetica">Admin User</p>
-              <p className="text-xs text-gray-300 font-helvetica">Administrator</p>
+              <p className="text-sm font-helvetica">{user?.username || 'User'}</p>
+              <p className="text-xs text-gray-300 font-helvetica">{user?.role || 'Loading...'}</p>
             </div>
           </div>
           {isCollapsed ? (
             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white">
-              <span className="font-helveticaBold">A</span>
+              <span className="font-helveticaBold">{user?.username ? user.username.charAt(0).toUpperCase() : 'U'}</span>
             </div>
           ) : (
-            <button className="p-1 rounded hover:bg-gray-700 transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="p-2 rounded hover:bg-gray-700 transition-colors" 
+              title="Logout"
+            >
               <i className="fas fa-sign-out-alt"></i>
             </button>
           )}

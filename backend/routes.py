@@ -93,7 +93,8 @@ async def create_user(user: UserCreate):
         id=str(created_user["_id"]),
         username=created_user["username"],
         email=created_user["email"],
-        role=created_user["role"]
+        role=created_user["role"],
+        created_at=created_user.get("created_at")
     )
 
 @router.get("/users/me", response_model=User)
@@ -106,7 +107,8 @@ async def read_users_me():
         id=str(user["_id"]),
         username=user["username"],
         email=user["email"],
-        role=user["role"]
+        role=user["role"],
+        created_at=user.get("created_at")
     )
 
 @router.get("/users", response_model=List[User])
@@ -118,9 +120,68 @@ async def read_users():
             id=str(user["_id"]),
             username=user["username"],
             email=user["email"],
-            role=user["role"]
+            role=user["role"],
+            created_at=user.get("created_at")
         ))
     return users
+
+@router.put("/users/{user_id}", response_model=User)
+async def update_user(user_id: str, user_data: dict):
+    """Update a user"""
+    try:
+        object_id = ObjectId(user_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+    # Check if user exists
+    if not await users_collection.find_one({"_id": object_id}):
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prepare update data
+    update_data = {}
+    if "username" in user_data:
+        update_data["username"] = user_data["username"]
+    if "email" in user_data:
+        update_data["email"] = user_data["email"]
+    if "role" in user_data:
+        update_data["role"] = user_data["role"]
+    
+    # Update password if provided
+    if "password" in user_data and user_data["password"]:
+        update_data["hashed_password"] = get_password_hash(user_data["password"])
+    
+    # Update user
+    await users_collection.update_one(
+        {"_id": object_id},
+        {"$set": update_data}
+    )
+    
+    # Return updated user
+    updated_user = await users_collection.find_one({"_id": object_id})
+    return User(
+        id=str(updated_user["_id"]),
+        username=updated_user["username"],
+        email=updated_user["email"],
+        role=updated_user["role"],
+        created_at=updated_user.get("created_at")
+    )
+
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: str):
+    """Delete a user"""
+    try:
+        object_id = ObjectId(user_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+    # Check if user exists
+    if not await users_collection.find_one({"_id": object_id}):
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete user
+    await users_collection.delete_one({"_id": object_id})
+    
+    return {"message": "User deleted successfully"}
 
 # Client endpoints
 @router.post("/clients", response_model=Client)

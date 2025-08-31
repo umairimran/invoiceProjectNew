@@ -2,104 +2,106 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Typography */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+/* Custom Fonts */
 @font-face {
-  font-family: 'Helvetica Black';
-  src: url('/fonts/HelveticaBlack.woff2') format('woff2');
-  font-weight: 900;
+  font-family: 'Signika';
+  src: url('/fonts/Signika-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Signika';
+  src: url('/fonts/Signika-Regular.ttf') format('truetype');
+  font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'Helvetica';
-  src: url('/fonts/Helvetica.woff2') format('woff2');
+  src: url('/fonts/Helvetica.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'Helvetica Bold';
-  src: url('/fonts/HelveticaBold.woff2') format('woff2');
+  font-family: 'HelveticaBold';
+  src: url('/fonts/Helvetica-Bold.ttf') format('truetype');
   font-weight: bold;
   font-style: normal;
 }
 
-@font-face {
-  font-family: 'Signika';
-  src: url('/fonts/Signika-Light.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
+/* Custom font classes */
+.font-signika {
+  font-family: 'Signika', sans-serif;
 }
 
-@font-face {
-  font-family: 'Signika';
-  src: url('/fonts/Signika-Regular.woff2') format('woff2');
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Signika';
-  src: url('/fonts/Signika-Bold.woff2') format('woff2');
-  font-weight: bold;
-  font-style: normal;
-}
-
-body {
+.font-helvetica {
   font-family: 'Helvetica', sans-serif;
-  background-color: #f5f5f5;
 }
 
-/* Custom utility classes */
+.font-helveticaBold {
+  font-family: 'HelveticaBold', sans-serif;
+}
+
+/* Card styling */
 .card {
-  @apply bg-white rounded-card shadow-card p-6;
+  @apply bg-white rounded-lg shadow p-6;
 }
 
+/* Sidebar link styling */
 .sidebar-link {
-  @apply flex items-center py-3 px-4 w-full rounded-lg hover:bg-gray-700 transition-colors;
+  @apply flex items-center px-4 py-3 rounded-lg text-white hover:bg-secondary/80 transition-colors;
 }
 
-.sidebar-link.active {
-  @apply bg-secondary text-white hover:bg-secondary/90;
-}
-
-.title {
-  @apply font-signika font-bold text-2xl text-primary;
-}
-
-.subtitle {
-  @apply font-signika font-light text-lg text-gray-700;
-}
-
-/* Button styles */
+/* Button styling */
 .btn {
-  @apply px-4 py-2 rounded-lg font-helvetica transition-colors;
+  @apply font-medium rounded-lg transition-colors duration-200;
 }
 
-.btn-primary {
-  @apply bg-primary text-white hover:bg-gray-800;
+.btn-sm {
+  @apply text-sm py-1 px-3;
 }
 
 .btn-secondary {
-  @apply bg-secondary text-white hover:bg-secondary/90;
-}
-
-/* Form styles */
-input:focus, select:focus, textarea:focus {
-  @apply outline-none ring-2 ring-secondary/50 border-transparent;
+  @apply bg-secondary hover:bg-secondary/90 text-white;
 }
 
 /* Table styles */
-table th {
-  @apply font-helveticaBold;
+.table-container {
+  @apply overflow-x-auto w-full;
 }
 
-table td {
-  @apply font-helvetica;
+.data-table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+.data-table-header {
+  @apply bg-gray-50;
+}
+
+.data-table-header th {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.data-table-body {
+  @apply bg-white divide-y divide-gray-200;
+}
+
+.data-table-row {
+  @apply hover:bg-gray-50;
+}
+
+.data-table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -108,9 +110,48 @@ table td {
 
 ::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Pagination styling */
+.pagination {
+  @apply flex items-center justify-center mt-4 space-x-1;
+}
+
+.pagination-item {
+  @apply px-3 py-1 rounded-md;
+}
+
+.pagination-item.active {
+  @apply bg-primary text-white;
+}
+
+.pagination-item:not(.active) {
+  @apply bg-white hover:bg-gray-100;
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Custom color variables (used by Tailwind) */
+:root {
+  --color-primary: #FF6549;
+  --color-primary-dark: #E04C35;
+  --color-secondary: #384050;
+  --color-accent: #44ACBE;
 }

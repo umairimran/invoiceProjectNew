@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List, Dict, Union
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 
@@ -25,11 +25,12 @@ class UserCreate(UserBase):
 class UserInDB(UserBase):
     id: Optional[str] = None
     hashed_password: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class User(UserBase):
     id: str
+    created_at: Optional[datetime] = None
 
 
 class Token(BaseModel):
@@ -53,7 +54,7 @@ class ClientInDB(ClientBase):
     id: Optional[str] = None
     client_code: str
     created_by: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Client(ClientBase):
@@ -78,7 +79,7 @@ class RateCardInDB(RateCardBase):
     id: Optional[str] = None
     client_id: str
     uploaded_by: str
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class RateCard(RateCardBase):
@@ -105,7 +106,7 @@ class AgencyInDB(AgencyBase):
     id: Optional[str] = None
     agency_code: str
     created_by: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     custom_folders: List[Dict] = Field(default_factory=list)
 
 
@@ -198,8 +199,8 @@ class JobCreate(JobBase):
 class JobInDB(JobBase):
     id: Optional[str] = None
     created_by: Optional[str] = "Admin"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Job(JobBase):
@@ -225,7 +226,7 @@ class Document(BaseModel):
     file_path: str
     original_filename: Optional[str] = None
     metadata: Optional[Dict[str, str]] = None
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     uploaded_by: Optional[str] = None
 
 
@@ -254,8 +255,8 @@ class InvoiceCreate(InvoiceBase):
 class InvoiceInDB(InvoiceBase):
     id: Optional[str] = None
     created_by: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Invoice(InvoiceBase):
@@ -291,7 +292,7 @@ class FolderCreate(FolderBase):
 class FolderInDB(FolderBase):
     id: Optional[str] = None
     created_by: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_verified: bool = False
     verified_by: Optional[str] = None
     verified_at: Optional[datetime] = None
@@ -322,7 +323,7 @@ class FileCreate(FileBase):
 class FileInDB(FileBase):
     id: Optional[str] = None
     uploaded_by: str
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class File(FileBase):
