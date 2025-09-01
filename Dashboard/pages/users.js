@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import UsersTable from '../components/UsersTable';
 import UserModal from '../components/UserModal';
+import RoleGuard from '../components/RoleGuard';
 import { usersAPI } from '../utils/api';
 
 export default function Users() {
@@ -179,22 +180,23 @@ export default function Users() {
   };
 
   return (
-    <Layout title="Users Management | Medpush DMCC">
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <h1 className="title">Users Management</h1>
-          <button
-            onClick={handleCreateNew}
-            className="btn btn-primary"
-          >
-            <i className="fas fa-plus mr-2"></i>
-            Add New User
-          </button>
+    <RoleGuard allowedRoles={['admin']} redirectTo="/">
+      <Layout title="Users Management | Medpush DMCC">
+        <div className="mb-6">
+          <div className="flex justify-between items-center">
+            <h1 className="title">Users Management</h1>
+            <button
+              onClick={handleCreateNew}
+              className="px-6 py-3 bg-secondary hover:bg-secondary/90 text-white rounded-lg font-medium transition-colors duration-200 flex items-center"
+            >
+              <i className="fas fa-plus mr-2"></i>
+              Add New User
+            </button>
+          </div>
+          <p className="text-gray-600 mt-2 font-helvetica">
+            Manage system users and their access permissions
+          </p>
         </div>
-        <p className="text-gray-600 mt-2 font-helvetica">
-          Manage system users and their access permissions
-        </p>
-      </div>
 
       {/* Error Display */}
       {error && (
@@ -273,5 +275,6 @@ export default function Users() {
         onSubmit={handleSubmitUser}
       />
     </Layout>
+    </RoleGuard>
   );
 }

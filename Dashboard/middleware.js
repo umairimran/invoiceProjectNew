@@ -10,8 +10,21 @@ export default function middleware(req) {
   const publicPaths = ['/login'];
   const isPublicPath = publicPaths.includes(pathname);
   
+  // Define admin-only paths
+  // Note: This is a basic check. The actual role verification happens client-side in RoleGuard
+  const adminOnlyPaths = ['/users'];
+  const isAdminOnlyPath = adminOnlyPaths.some(path => pathname.startsWith(path));
+  
+  // Special handling for API routes and static assets - always allow
+  if (pathname.startsWith('/api/') || 
+      pathname.startsWith('/_next/') || 
+      pathname.includes('.')) {
+    return NextResponse.next();
+  }
+  
   // If no token and trying to access protected route, redirect to login
   if (!token && !isPublicPath) {
+    console.log(`Middleware: No auth token, redirecting from ${pathname} to /login`);
     const url = new URL('/login', req.url);
     url.searchParams.set('from', pathname);
     return NextResponse.redirect(url);
@@ -19,8 +32,12 @@ export default function middleware(req) {
   
   // If token exists and trying to access login page, redirect to dashboard
   if (token && isPublicPath) {
+    console.log(`Middleware: Auth token exists, redirecting from ${pathname} to /`);
     return NextResponse.redirect(new URL('/', req.url));
   }
+  
+  // For admin-only paths, we'll let the RoleGuard component handle the authorization
+  // The middleware only handles authentication (token presence)
   
   return NextResponse.next();
 }

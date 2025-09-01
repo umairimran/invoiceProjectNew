@@ -14,9 +14,30 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Get token from localStorage
         const token = localStorage.getItem('auth_token');
         
-        if (token) {
+        // Check if token exists in localStorage but not in cookies
+        const cookieToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('auth_token='))
+          ?.split('=')[1];
+          
+        // Sync localStorage and cookies
+        if (token && !cookieToken) {
+          // If token exists in localStorage but not in cookie, set the cookie
+          document.cookie = `auth_token=${token}; path=/; max-age=${60*60*24*7}`; // 7 days
+          console.log('Restored auth_token cookie from localStorage');
+        } else if (!token && cookieToken) {
+          // If token exists in cookie but not in localStorage, set localStorage
+          localStorage.setItem('auth_token', cookieToken);
+          console.log('Restored auth_token in localStorage from cookie');
+        }
+        
+        // Now check if we have a valid token in either place
+        const validToken = token || cookieToken;
+        
+        if (validToken) {
           // Token exists, try to get current user data
           const userData = await authAPI.getCurrentUser();
           if (userData) {
@@ -24,11 +45,14 @@ export function AuthProvider({ children }) {
           } else {
             // Invalid token, clean up
             localStorage.removeItem('auth_token');
+            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
           }
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
+        // Clear both localStorage and cookie on error
         localStorage.removeItem('auth_token');
+        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       } finally {
         setLoading(false);
       }
@@ -47,17 +71,35 @@ export function AuthProvider({ children }) {
         localStorage.setItem('auth_token', response.access_token);
         
         // Also save in a cookie for middleware/server-side auth
-        document.cookie = `auth_token=${response.access_token}; path=/; max-age=${60*60*24*7}`; // 7 days
+        // Use SameSite=Lax to ensure cookie is sent with navigation requests
+        document.cookie = `auth_token=${response.access_token}; path=/; max-age=${60*60*24*7}; SameSite=Lax`; // 7 days
         
         // Fetch user profile after successful login
-        const userData = await authAPI.getCurrentUser();
-        setUser(userData);
-        
-        return { success: true };
+        try {
+          const userData = await authAPI.getCurrentUser();
+          if (userData) {
+            setUser(userData);
+            return { success: true };
+          } else {
+            // If getCurrentUser returns null but we have a token, something's wrong
+            console.error('Got token but could not fetch user data');
+            localStorage.removeItem('auth_token');
+            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            return { success: false, error: 'Could not fetch user data' };
+          }
+        } catch (userError) {
+          console.error('Error fetching user data after login:', userError);
+          localStorage.removeItem('auth_token');
+          document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          return { success: false, error: 'Could not fetch user data after login' };
+        }
       }
       return { success: false, error: 'Invalid response from server' };
     } catch (error) {
       console.error('Login failed:', error);
+      // Make sure to clean up any partial state
+      localStorage.removeItem('auth_token');
+      document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       return { 
         success: false, 
         error: error.message || 'Login failed. Please check your credentials.'
@@ -70,10 +112,14 @@ export function AuthProvider({ children }) {
     // Clear localStorage
     localStorage.removeItem('auth_token');
     
-    // Clear cookie
-    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    // Clear cookie - make sure to use the same path
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;';
     
+    // Clear user state
     setUser(null);
+    
+    // Redirect to login page
+    console.log('Logging out and redirecting to login page');
     router.push('/login');
   };
 

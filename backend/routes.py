@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Body, Depends
 from typing import List, Optional
 from bson import ObjectId
 import os
@@ -8,7 +8,7 @@ import secrets
 import re
 from datetime import datetime
 from auth import (
-    get_password_hash, authenticate_user, create_access_token, JWT_EXPIRATION_MINUTES
+    get_password_hash, authenticate_user, create_access_token, JWT_EXPIRATION_MINUTES, get_current_user
 )
 
 from models import (
@@ -98,18 +98,9 @@ async def create_user(user: UserCreate):
     )
 
 @router.get("/users/me", response_model=User)
-async def read_users_me():
-    """Get first user info (development mode)"""
-    user = await users_collection.find_one()
-    if not user:
-        raise HTTPException(status_code=404, detail="No users found")
-    return User(
-        id=str(user["_id"]),
-        username=user["username"],
-        email=user["email"],
-        role=user["role"],
-        created_at=user.get("created_at")
-    )
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    """Get current user info from JWT token"""
+    return current_user
 
 @router.get("/users", response_model=List[User])
 async def read_users():

@@ -9,11 +9,35 @@ const UserModal = ({ isOpen, onClose, user, onSubmit }) => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [fontAwesomeLoaded, setFontAwesomeLoaded] = useState(false);
 
   const isEditing = !!user;
   
   // Debug logging
   console.log('UserModal render:', { user, isEditing, isOpen });
+
+  // Check if Font Awesome is loaded
+  useEffect(() => {
+    const checkFontAwesome = () => {
+      // Simple check if Font Awesome is available
+      const testElement = document.createElement('i');
+      testElement.className = 'fas fa-eye';
+      document.body.appendChild(testElement);
+      
+      setTimeout(() => {
+        const computedStyle = window.getComputedStyle(testElement, '::before');
+        const isLoaded = computedStyle.content !== 'none' && computedStyle.content !== '';
+        document.body.removeChild(testElement);
+        setFontAwesomeLoaded(isLoaded);
+      }, 100);
+    };
+
+    // Check after component mounts
+    const timer = setTimeout(checkFontAwesome, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -33,6 +57,7 @@ const UserModal = ({ isOpen, onClose, user, onSubmit }) => {
       });
     }
     setErrors({});
+    setShowPassword(false); // Reset password visibility when modal opens
   }, [user, isOpen]);
 
   const validateForm = () => {
@@ -128,6 +153,10 @@ const UserModal = ({ isOpen, onClose, user, onSubmit }) => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -193,15 +222,38 @@ const UserModal = ({ isOpen, onClose, user, onSubmit }) => {
             <label className="block font-helvetica font-bold mb-2" htmlFor="password">
               Password {isEditing && <span className="font-normal text-gray-500 text-sm">(Leave blank to keep current)</span>}
             </label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder={isEditing ? "Enter new password" : "Enter password"}
-            />
+            <div className="relative" style={{ minHeight: '48px' }}>
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 pr-12 border rounded-lg ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder={isEditing ? "Enter new password" : "Enter password"}
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/50 rounded-md cursor-pointer p-1 min-w-[24px] min-h-[24px] flex items-center justify-center z-10"
+                style={{ pointerEvents: 'auto' }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {fontAwesomeLoaded ? (
+                  showPassword ? (
+                    <i className="fas fa-eye-slash text-sm"></i>
+                  ) : (
+                    <i className="fas fa-eye text-sm"></i>
+                  )
+                ) : (
+                  <span className="text-xs font-medium">
+                    {showPassword ? 'Hide' : 'Show'}
+                  </span>
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password}</p>
             )}
@@ -227,14 +279,14 @@ const UserModal = ({ isOpen, onClose, user, onSubmit }) => {
             <button
               type="button"
               onClick={onClose}
-              className="btn bg-gray-300 hover:bg-gray-400 text-gray-800"
+              className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="px-6 py-3 bg-secondary hover:bg-secondary/90 text-white rounded-lg font-medium transition-colors duration-200 flex items-center"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

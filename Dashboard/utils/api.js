@@ -85,12 +85,28 @@ async function fetchAPI(endpoint, options = {}) {
 
   // Add authorization header if token exists
   try {
-    const token = localStorage.getItem('auth_token');
+    // Try to get token from localStorage first
+    let token = localStorage.getItem('auth_token');
+    
+    // If not in localStorage, try to get from cookie (for SSR/middleware)
+    if (!token && typeof document !== 'undefined') {
+      const cookieToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+      
+      if (cookieToken) {
+        token = cookieToken;
+        // Sync back to localStorage
+        localStorage.setItem('auth_token', cookieToken);
+      }
+    }
+    
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
   } catch (e) {
-    console.warn('Could not access localStorage for auth token');
+    console.warn('Could not access localStorage/cookies for auth token', e);
   }
 
   // Prepare request config
@@ -112,6 +128,25 @@ async function fetchAPI(endpoint, options = {}) {
         
         // Try to get more details from the response
         let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+        
+        // Handle authentication errors (401 Unauthorized)
+        if (response.status === 401) {
+          console.error('Authentication failed, clearing tokens');
+          // Clear authentication state
+          try {
+            localStorage.removeItem('auth_token');
+            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          } catch (e) {
+            console.error('Error clearing auth tokens', e);
+          }
+          
+          // If we're not on the login page, redirect to it
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            console.log('Redirecting to login due to 401 error');
+            window.location.href = '/login';
+            return null;
+          }
+        }
         
         // Don't throw immediately on 404s, let the caller handle them
         if (response.status === 404) {
@@ -613,7 +648,27 @@ export const usersAPI = {
    * @returns {Promise<Array>} - List of users
    */
   getAll: async () => {
+    // For admin users, try to get the users with passwords first
+    try {
+      const usersWithPasswords = await fetchAPI('/admin/users');
+      if (usersWithPasswords) {
+        return usersWithPasswords;
+      }
+    } catch (error) {
+      console.log('Not an admin or admin endpoint not available, falling back to regular users endpoint');
+    }
+    
+    // Fall back to regular users endpoint
     return fetchAPI('/users');
+  },
+  
+  /**
+   * Get user password (admin only)
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} - Password object
+   */
+  getUserPassword: async (userId) => {
+    return fetchAPI(`/admin/users/${userId}/password`);
   },
 
   /**
@@ -631,10 +686,20 @@ export const usersAPI = {
    * @returns {Promise<Object>} - Created user
    */
   create: async (userData) => {
-    return fetchAPI('/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    try {
+      // Try to use admin endpoint first to store the password
+      return await fetchAPI('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    } catch (error) {
+      console.log('Admin endpoint not available, falling back to regular users endpoint');
+      // Fall back to regular endpoint
+      return fetchAPI('/users', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    }
   },
 
   /**
@@ -644,10 +709,20 @@ export const usersAPI = {
    * @returns {Promise<Object>} - Updated user
    */
   update: async (userId, userData) => {
-    return fetchAPI(`/users/${userId}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
+    try {
+      // Try to use admin endpoint first to store the password
+      return await fetchAPI(`/admin/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify(userData),
+      });
+    } catch (error) {
+      console.log('Admin endpoint not available, falling back to regular users endpoint');
+      // Fall back to regular endpoint
+      return fetchAPI(`/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify(userData),
+      });
+    }
   },
 
   /**

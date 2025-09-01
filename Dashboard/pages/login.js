@@ -9,14 +9,39 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [fontAwesomeLoaded, setFontAwesomeLoaded] = useState(false);
   
   const { login, isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const { from } = router.query;
   
+  // Check if Font Awesome is loaded
+  useEffect(() => {
+    const checkFontAwesome = () => {
+      // Simple check if Font Awesome is available
+      const testElement = document.createElement('i');
+      testElement.className = 'fas fa-eye';
+      document.body.appendChild(testElement);
+      
+      setTimeout(() => {
+        const computedStyle = window.getComputedStyle(testElement, '::before');
+        const isLoaded = computedStyle.content !== 'none' && computedStyle.content !== '';
+        document.body.removeChild(testElement);
+        setFontAwesomeLoaded(isLoaded);
+      }, 100);
+    };
+
+    // Check after component mounts
+    const timer = setTimeout(checkFontAwesome, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   // Redirect if already authenticated
   useEffect(() => {
+    // Only redirect if we've confirmed authentication and finished loading
     if (isAuthenticated && !loading) {
+      console.log('Login page: User is authenticated, redirecting to dashboard');
       router.push(from || '/');
     }
   }, [isAuthenticated, loading, router, from]);
@@ -50,12 +75,12 @@ export default function Login() {
   return (
     <>
       <Head>
-        <title>Login | MedPush X</title>
+        <title>Login | Medpush X MEDPUSH</title>
       </Head>
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-xl border-t-4 border-secondary">
           <div className="text-center">
-            <h1 className="font-signika font-bold text-2xl text-primary">MedPush X</h1>
+            <h1 className="font-signika font-bold text-2xl text-primary">Medpush X MEDPUSH</h1>
             <p className="mt-2 text-sm text-gray-600 font-helvetica">Sign in to your account</p>
           </div>
           
@@ -68,7 +93,7 @@ export default function Login() {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="rounded-md space-y-4">
               <div>
-                <label htmlFor="email" className="sr-only">Email address</label>
+                <label htmlFor="email" className="block font-helvetica text-sm font-medium text-gray-700 mb-2">Email address</label>
                 <input
                   id="email"
                   name="email"
@@ -77,35 +102,47 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-transparent focus:z-10 sm:text-sm"
                   placeholder="Email address"
                 />
               </div>
               
-              <div className="relative">
-                <label htmlFor="password" className="sr-only">Password</label>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm pr-10"
-                  placeholder="Password"
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? (
-                    <i className="fas fa-eye-slash"></i>
-                  ) : (
-                    <i className="fas fa-eye"></i>
-                  )}
-                </button>
+              <div>
+                <label htmlFor="password" className="block font-helvetica text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div className="relative" style={{ minHeight: '48px' }}>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-transparent focus:z-10 sm:text-sm pr-12"
+                    placeholder="Password"
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/50 rounded-md cursor-pointer p-1 min-w-[24px] min-h-[24px] flex items-center justify-center z-10"
+                    style={{ pointerEvents: 'auto' }}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {fontAwesomeLoaded ? (
+                      showPassword ? (
+                        <i className="fas fa-eye-slash text-sm"></i>
+                      ) : (
+                        <i className="fas fa-eye text-sm"></i>
+                      )
+                    ) : (
+                      <span className="text-xs font-medium">
+                        {showPassword ? 'Hide' : 'Show'}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -113,15 +150,13 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors ${
+                className={`w-full py-3 px-4 text-sm font-medium rounded-lg text-white bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-colors flex items-center justify-center ${
                   isLoading ? 'opacity-70 cursor-not-allowed' : ''
                 }`}
               >
                 {isLoading ? (
                   <>
-                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                      <i className="fas fa-spinner fa-spin"></i>
-                    </span>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
                     Signing in...
                   </>
                 ) : (

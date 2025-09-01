@@ -8,11 +8,22 @@ const Sidebar = () => {
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: 'fas fa-tachometer-alt' },
-    { name: 'Clients', path: '/clients', icon: 'fas fa-users' },
-    { name: 'Users', path: '/users', icon: 'fas fa-user-cog' }
-  ];
+  // Define navigation items based on user role
+  const getNavItems = () => {
+    const baseItems = [
+      { name: 'Dashboard', path: '/', icon: 'fas fa-tachometer-alt' },
+      { name: 'Clients', path: '/clients', icon: 'fas fa-users' },
+    ];
+    
+    // Add Users management link only for admin users
+    if (user?.role === 'admin') {
+      baseItems.push({ name: 'Users', path: '/users', icon: 'fas fa-user-cog' });
+    }
+    
+    return baseItems;
+  };
+  
+  const navItems = getNavItems();
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);

@@ -12,6 +12,7 @@ from job_routes import router as job_router
 from folder_routes import router as folder_router
 from invoice_routes import router as invoice_router
 from report_routes import router as report_router
+from admin_routes import router as admin_router
 from models import Role
 
 # Create FastAPI app
@@ -37,6 +38,7 @@ app.include_router(job_router, prefix="/api")
 app.include_router(folder_router, prefix="/api")
 app.include_router(invoice_router, prefix="/api")
 app.include_router(report_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 # Create upload directories
 uploads_dir = Path("uploads")

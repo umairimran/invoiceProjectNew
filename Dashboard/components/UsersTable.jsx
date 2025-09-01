@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { usersAPI } from '../utils/api';
 
 const UsersTable = ({ data, onEdit, onDelete }) => {
   const [sortConfig, setSortConfig] = useState({
@@ -7,6 +8,9 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [userPasswords, setUserPasswords] = useState({});
+  const [loadingPasswords, setLoadingPasswords] = useState({});
+  const [showPasswordFor, setShowPasswordFor] = useState({});
 
   const requestSort = (key) => {
     let direction = 'ascending';
@@ -65,6 +69,54 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
   const handleDelete = (userId) => {
     setDeleteConfirm(null);
     onDelete(userId);
+  };
+  
+  // Function to fetch a user's password
+  const fetchUserPassword = async (userId) => {
+    if (userPasswords[userId]) return; // Already fetched
+    
+    setLoadingPasswords(prev => ({ ...prev, [userId]: true }));
+    try {
+      const response = await usersAPI.getUserPassword(userId);
+      if (response && response.password) {
+        setUserPasswords(prev => ({ 
+          ...prev, 
+          [userId]: response.password 
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching password:', error);
+    } finally {
+      setLoadingPasswords(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+  
+  // Function to toggle password visibility
+  const togglePasswordVisibility = (userId) => {
+    setShowPasswordFor(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+    
+    // If showing password and we don't have it yet, fetch it
+    if (!showPasswordFor[userId] && !userPasswords[userId]) {
+      fetchUserPassword(userId);
+    }
+  };
+  
+  // Function to copy password to clipboard
+  const copyPasswordToClipboard = (userId) => {
+    if (userPasswords[userId]) {
+      navigator.clipboard.writeText(userPasswords[userId])
+        .then(() => {
+          alert('Password copied to clipboard!');
+        })
+        .catch(err => {
+          console.error('Failed to copy password:', err);
+        });
+    } else {
+      fetchUserPassword(userId);
+    }
   };
 
   const getRoleBadge = (role) => {
@@ -157,6 +209,12 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
                   <i className={`ml-1 fas ${getClassNamesFor('created_at') === 'ascending' ? 'fa-sort-up' : getClassNamesFor('created_at') === 'descending' ? 'fa-sort-down' : 'fa-sort'}`}></i>
                 </div>
               </th>
+              <th className="py-3 px-4 text-left font-helveticaBold">
+                <div className="flex items-center">
+                  <span>Password</span>
+                  <i className="fas fa-key ml-1 text-yellow-500"></i>
+                </div>
+              </th>
               <th className="py-3 px-4 text-left font-helveticaBold">Actions</th>
             </tr>
           </thead>
@@ -184,33 +242,65 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
                    <td className="py-4 px-4 font-helvetica">
                      {getRoleBadge(user.role)}
                    </td>
-                   <td className="py-4 px-4 font-helvetica">
-                     {user.created_at ? formatDate(user.created_at) : 'N/A'}
-                   </td>
-                   <td className="py-4 px-4">
-                     <div className="flex space-x-2">
-                       <button 
-                         onClick={() => onEdit(user)}
-                         className="btn btn-sm btn-secondary py-1 px-3"
-                         title="Edit User"
-                       >
-                         <i className="fas fa-edit mr-1"></i> Edit
-                       </button>
-                       <button 
-                         onClick={() => setDeleteConfirm(user.id)}
-                         className="btn btn-sm bg-red-600 text-white hover:bg-red-700 py-1 px-3"
-                         title="Delete User"
-                       >
-                         <i className="fas fa-trash-alt mr-1"></i> Delete
-                       </button>
-                     </div>
-                   </td>
+                                     <td className="py-4 px-4 font-helvetica">
+                    {user.created_at ? formatDate(user.created_at) : 'N/A'}
+                  </td>
+                  <td className="py-4 px-4 font-helvetica">
+                    <div className="flex items-center space-x-2">
+                      {/* Password display with toggle */}
+                      <div className="relative flex-grow">
+                        <input 
+                          type={showPasswordFor[user.id] ? "text" : "password"}
+                          value={
+                            loadingPasswords[user.id] 
+                              ? "Loading..." 
+                              : (userPasswords[user.id] || user.password || "••••••••")
+                          }
+                          readOnly
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-secondary focus:border-secondary block w-full p-2"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => togglePasswordVisibility(user.id)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-secondary"
+                        >
+                          <i className={`fas ${showPasswordFor[user.id] ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                        </button>
+                      </div>
+                      {/* Copy button */}
+                      <button
+                        onClick={() => copyPasswordToClipboard(user.id)}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg"
+                        title="Copy Password"
+                      >
+                        <i className="fas fa-copy"></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => onEdit(user)}
+                        className="btn btn-sm btn-secondary py-1 px-3"
+                        title="Edit User"
+                      >
+                        <i className="fas fa-edit mr-1"></i> Edit
+                      </button>
+                      <button 
+                        onClick={() => setDeleteConfirm(user.id)}
+                        className="btn btn-sm bg-red-600 text-white hover:bg-red-700 py-1 px-3"
+                        title="Delete User"
+                      >
+                        <i className="fas fa-trash-alt mr-1"></i> Delete
+                      </button>
+                    </div>
+                  </td>
                  </tr>
                );
              })}
             {filteredData.length === 0 && (
               <tr>
-                <td colSpan="5" className="py-8 text-center text-gray-500">
+                <td colSpan="6" className="py-8 text-center text-gray-500">
                   {searchTerm ? 'No users found matching your search' : 'No users available'}
                 </td>
               </tr>
