@@ -462,7 +462,7 @@ export default function JobDetailsPage() {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="btn btn-secondary"
+                    className="px-6 py-3 font-helvetica font-medium text-white bg-secondary hover:bg-secondary/90 rounded-lg transition-all duration-200 shadow-md inline-flex items-center"
                   >
                     <i className="fas fa-edit mr-2"></i>
                     Edit Details
@@ -593,7 +593,7 @@ export default function JobDetailsPage() {
               <div className="mt-4 md:mt-0">
                 <button 
                   onClick={handleAIProcess}
-                  className="btn bg-blue-600 text-white hover:bg-blue-700"
+                  className="px-6 py-3 font-helvetica font-medium text-white bg-secondary hover:bg-secondary/90 rounded-lg transition-all duration-200 shadow-md inline-flex items-center"
                 >
                   <i className="fas fa-robot mr-2"></i>
                   Run AI Process

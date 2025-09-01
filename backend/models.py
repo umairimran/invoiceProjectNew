@@ -25,12 +25,14 @@ class UserCreate(UserBase):
 class UserInDB(UserBase):
     id: Optional[str] = None
     hashed_password: str
+    password: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class User(UserBase):
     id: str
     created_at: Optional[datetime] = None
+    password: Optional[str] = None
 
 
 class Token(BaseModel):

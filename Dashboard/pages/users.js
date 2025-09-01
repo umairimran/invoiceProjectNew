@@ -52,6 +52,7 @@ export default function Users() {
       console.log('handleCreateUser called with:', userData);
       const newUser = await usersAPI.create(userData);
       console.log('User created successfully:', newUser);
+      console.log('Created at value:', newUser.created_at);
       
       setUsers([...users, newUser]);
       

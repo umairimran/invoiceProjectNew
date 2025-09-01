@@ -133,7 +133,7 @@ const DocumentManager = ({
         />
         <label
           htmlFor={`file-upload-${folderType}`}
-          className={`btn ${uploading ? 'bg-gray-400' : 'btn-primary'} cursor-pointer inline-block`}
+          className={`px-6 py-3 font-helvetica font-medium text-white ${uploading ? 'bg-gray-400' : 'bg-secondary'} rounded-lg hover:bg-secondary/90 transition-all duration-200 shadow-md cursor-pointer inline-flex items-center`}
         >
           {uploading ? (
             <>

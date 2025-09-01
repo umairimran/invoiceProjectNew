@@ -6,6 +6,7 @@ from models import User, Role, UserCreate
 from db import users_collection
 import re
 import os
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -14,15 +15,12 @@ router = APIRouter()
 # This is just for demonstration purposes
 USER_PASSWORDS = {}
 
-# Model for admin user view that includes password info
-class AdminUserView(User):
-    """User model with password for admin view"""
-    password: str = None
+# Password field is now directly in the User model
 
 # Initialize with default admin password
 USER_PASSWORDS["admin@example.com"] = "adminpassword"
 
-@router.get("/admin/users", response_model=List[AdminUserView])
+@router.get("/admin/users", response_model=List[User])
 async def get_users_with_passwords(current_user: User = Depends(get_current_admin)):
     """
     Get all users with their passwords (admin only)
@@ -30,19 +28,14 @@ async def get_users_with_passwords(current_user: User = Depends(get_current_admi
     """
     users = []
     async for user in users_collection.find():
-        # Get user email as key
-        email = user.get("email", "")
-        
-        # Get the password if it exists in our store, otherwise use a placeholder
-        password = USER_PASSWORDS.get(email, "password123")
-        
-        users.append(AdminUserView(
+        # Include the plaintext password directly in the user object
+        users.append(User(
             id=str(user["_id"]),
             username=user["username"],
             email=user["email"],
             role=user["role"],
             created_at=user.get("created_at"),
-            password=password
+            password=user.get("password", USER_PASSWORDS.get(user.get("email", ""), "password123"))
         ))
     return users
 
@@ -61,8 +54,11 @@ async def get_user_password(user_id: str, current_user: User = Depends(get_curre
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    email = user.get("email", "")
-    password = USER_PASSWORDS.get(email, "password123")
+    # Get password directly from user object, fall back to USER_PASSWORDS if not found
+    password = user.get("password", "")
+    if not password:
+        email = user.get("email", "")
+        password = USER_PASSWORDS.get(email, "password123")
     
     return {"password": password}
 
@@ -76,26 +72,32 @@ async def create_user_with_password(user: UserCreate, current_user: User = Depen
     # Store the plaintext password for admin viewing
     USER_PASSWORDS[user.email] = user.password
     
-    # Create user document with hashed password
+    # Create user document with both hashed and plaintext password
     user_dict = user.dict()
-    hashed_password = get_password_hash(user_dict.pop("password"))
+    plaintext_password = user.password
+    hashed_password = get_password_hash(plaintext_password)
     
-    # Insert into database
+    # Insert into database with plaintext password
     result = await users_collection.insert_one({
         "username": user.username,
         "email": user.email,
         "hashed_password": hashed_password,
-        "role": user.role
+        "password": plaintext_password,
+        "role": user.role,
+        "created_at": datetime.now(timezone.utc)
     })
     
     # Return created user
     created_user = await users_collection.find_one({"_id": result.inserted_id})
+    print(f"Created user: {created_user}")
     
     return User(
         id=str(created_user["_id"]),
         username=created_user["username"],
         email=created_user["email"],
-        role=created_user["role"]
+        role=created_user["role"],
+        created_at=created_user.get("created_at"),
+        password=created_user.get("password")
     )
 
 @router.put("/admin/users/{user_id}", response_model=User)
@@ -131,9 +133,8 @@ async def update_user_with_password(
     
     # Update password if provided
     if "password" in user_data and user_data["password"]:
-        # Store plaintext password
-        USER_PASSWORDS[existing_user["email"]] = user_data["password"]
-        # Hash password for database
+        # Store both plaintext and hashed password
+        update_data["password"] = user_data["password"]
         update_data["hashed_password"] = get_password_hash(user_data["password"])
     
     # Update user
@@ -149,5 +150,7 @@ async def update_user_with_password(
         id=str(updated_user["_id"]),
         username=updated_user["username"],
         email=updated_user["email"],
-        role=updated_user["role"]
+        role=updated_user["role"],
+        created_at=updated_user.get("created_at"),
+        password=updated_user.get("password")
     )

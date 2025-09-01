@@ -10,7 +10,26 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [userPasswords, setUserPasswords] = useState({});
   const [loadingPasswords, setLoadingPasswords] = useState({});
-  const [showPasswordFor, setShowPasswordFor] = useState({});
+  // No longer need to track password visibility since passwords are always shown
+
+  // Pre-load passwords when component mounts
+  useEffect(() => {
+    if (data && Array.isArray(data)) {
+      // Store passwords from the users data if available
+      const initialPasswords = {};
+      data.forEach(user => {
+        if (user && user.id) {
+          if (user.password) {
+            initialPasswords[user.id] = user.password;
+          } else {
+            // Fetch any passwords that aren't already available
+            fetchUserPassword(user.id);
+          }
+        }
+      });
+      setUserPasswords(initialPasswords);
+    }
+  }, [data]);
 
   const requestSort = (key) => {
     let direction = 'ascending';
@@ -91,23 +110,22 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
     }
   };
   
-  // Function to toggle password visibility
-  const togglePasswordVisibility = (userId) => {
-    setShowPasswordFor(prev => ({
-      ...prev,
-      [userId]: !prev[userId]
-    }));
-    
-    // If showing password and we don't have it yet, fetch it
-    if (!showPasswordFor[userId] && !userPasswords[userId]) {
+  // Function to ensure we have the password (now just fetches if needed)
+  const ensurePasswordLoaded = (userId) => {
+    // If we don't have the password yet, fetch it
+    if (!userPasswords[userId]) {
       fetchUserPassword(userId);
     }
   };
   
   // Function to copy password to clipboard
   const copyPasswordToClipboard = (userId) => {
-    if (userPasswords[userId]) {
-      navigator.clipboard.writeText(userPasswords[userId])
+    // Find the password for this user
+    const user = data.find(u => u.id === userId);
+    const password = user?.password || userPasswords[userId];
+    
+    if (password) {
+      navigator.clipboard.writeText(password)
         .then(() => {
           alert('Password copied to clipboard!');
         })
@@ -140,13 +158,21 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
     if (!dateString) return 'N/A';
     
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      // Log the type and content for debugging
+      console.log('Date value to format:', dateString, typeof dateString);
+      
+      // Handle both string date and ISO date objects from the API
+      const date = typeof dateString === 'string' ? new Date(dateString) : 
+                  dateString instanceof Object && dateString.hasOwnProperty('$date') ? 
+                  new Date(dateString['$date']) : new Date(dateString);
+                  
+      return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       });
     } catch (error) {
-      console.error('Error formatting date:', error);
+      console.error('Error formatting date:', error, dateString);
       return 'N/A';
     }
   };
@@ -243,35 +269,31 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
                      {getRoleBadge(user.role)}
                    </td>
                                      <td className="py-4 px-4 font-helvetica">
-                    {user.created_at ? formatDate(user.created_at) : 'N/A'}
+                    {user.created_at ? (
+                      formatDate(user.created_at)
+                    ) : 'N/A'}
                   </td>
                   <td className="py-4 px-4 font-helvetica">
                     <div className="flex items-center space-x-2">
                       {/* Password display with toggle */}
-                      <div className="relative flex-grow">
+                      <div className="flex-grow">
                         <input 
-                          type={showPasswordFor[user.id] ? "text" : "password"}
+                          type="text"
                           value={
                             loadingPasswords[user.id] 
                               ? "Loading..." 
-                              : (userPasswords[user.id] || user.password || "••••••••")
+                              : (user.password || userPasswords[user.id] || "password123")
                           }
                           readOnly
                           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-secondary focus:border-secondary block w-full p-2"
                         />
-                        <button 
-                          type="button"
-                          onClick={() => togglePasswordVisibility(user.id)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-secondary"
-                        >
-                          <i className={`fas ${showPasswordFor[user.id] ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                        </button>
                       </div>
                       {/* Copy button */}
                       <button
                         onClick={() => copyPasswordToClipboard(user.id)}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg"
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg flex-shrink-0"
                         title="Copy Password"
+                        style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <i className="fas fa-copy"></i>
                       </button>

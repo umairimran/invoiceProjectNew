@@ -84,7 +84,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         id=user.id,
         username=user.username,
         email=user.email,
-        role=user.role
+        role=user.role,
+        created_at=user.created_at,
+        password=getattr(user, 'password', None)
     )
 
 async def get_current_admin(current_user: User = Depends(get_current_user)) -> User:

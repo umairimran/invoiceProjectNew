@@ -77,14 +77,24 @@ async def create_user(user: UserCreate):
     if await users_collection.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create user document
+    # Create user document with both hashed and plaintext password
     user_dict = user.dict()
-    hashed_password = get_password_hash(user_dict.pop("password"))
+    plaintext_password = user.password
+    hashed_password = get_password_hash(plaintext_password)
     
-    user_in_db = UserInDB(**user_dict, hashed_password=hashed_password)
+    # Get current time for created_at
+    from datetime import datetime, timezone
+    created_at = datetime.now(timezone.utc)
     
-    # Insert into database
-    result = await users_collection.insert_one(user_in_db.dict(exclude={"id"}))
+    # Create user with plaintext password
+    result = await users_collection.insert_one({
+        "username": user.username,
+        "email": user.email,
+        "hashed_password": hashed_password,
+        "password": plaintext_password,
+        "role": user.role,
+        "created_at": created_at
+    })
     
     # Return created user
     created_user = await users_collection.find_one({"_id": result.inserted_id})
@@ -94,7 +104,8 @@ async def create_user(user: UserCreate):
         username=created_user["username"],
         email=created_user["email"],
         role=created_user["role"],
-        created_at=created_user.get("created_at")
+        created_at=created_user.get("created_at"),
+        password=created_user.get("password")
     )
 
 @router.get("/users/me", response_model=User)
@@ -112,7 +123,8 @@ async def read_users():
             username=user["username"],
             email=user["email"],
             role=user["role"],
-            created_at=user.get("created_at")
+            created_at=user.get("created_at"),
+            password=user.get("password", "password123")
         ))
     return users
 
@@ -140,6 +152,7 @@ async def update_user(user_id: str, user_data: dict):
     # Update password if provided
     if "password" in user_data and user_data["password"]:
         update_data["hashed_password"] = get_password_hash(user_data["password"])
+        update_data["password"] = user_data["password"]
     
     # Update user
     await users_collection.update_one(
@@ -154,7 +167,8 @@ async def update_user(user_id: str, user_data: dict):
         username=updated_user["username"],
         email=updated_user["email"],
         role=updated_user["role"],
-        created_at=updated_user.get("created_at")
+        created_at=updated_user.get("created_at"),
+        password=updated_user.get("password")
     )
 
 @router.delete("/users/{user_id}")
