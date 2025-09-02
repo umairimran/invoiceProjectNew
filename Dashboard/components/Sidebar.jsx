@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [loadingPath, setLoadingPath] = useState(null);
   const router = useRouter();
   const { user, logout } = useAuth();
 
@@ -31,6 +32,15 @@ const Sidebar = () => {
   
   const handleLogout = () => {
     logout();
+  };
+
+  // Handle navigation with loading state
+  const handleNavigation = (path) => {
+    if (path !== router.pathname) {
+      setLoadingPath(path);
+      // Clear loading state after a short delay
+      setTimeout(() => setLoadingPath(null), 1000);
+    }
   };
 
   return (
@@ -64,12 +74,22 @@ const Sidebar = () => {
             <li key={item.name}>
               <Link 
                 href={item.path}
+                onClick={() => handleNavigation(item.path)}
                 className={`sidebar-link ${
                   router.pathname === item.path ? 'bg-secondary text-white' : ''
-                }`}
+                } ${loadingPath === item.path ? 'opacity-75' : ''}`}
               >
-                <i className={`${item.icon} ${isCollapsed ? 'mx-auto' : 'mr-3'}`}></i>
-                {!isCollapsed && <span className="font-helvetica">{item.name}</span>}
+                <i className={`${item.icon} ${isCollapsed ? 'mx-auto' : 'mr-3'} ${
+                  loadingPath === item.path ? 'fa-spin' : ''
+                }`}></i>
+                {!isCollapsed && (
+                  <span className="font-helvetica flex items-center">
+                    {item.name}
+                    {loadingPath === item.path && (
+                      <i className="fas fa-spinner fa-spin ml-2 text-xs"></i>
+                    )}
+                  </span>
+                )}
               </Link>
             </li>
           ))}

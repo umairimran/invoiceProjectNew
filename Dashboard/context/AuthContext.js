@@ -64,7 +64,15 @@ export function AuthProvider({ children }) {
   // Login function
   const login = async (email, password) => {
     try {
+      console.log('Attempting login for:', email);
       const response = await authAPI.login(email, password);
+      console.log('Login response:', response);
+      
+      // Handle case where API returns null (e.g., 401 error)
+      if (response === null) {
+        console.log('Login failed: API returned null');
+        return { success: false, error: 'Incorrect email or password. Please check your credentials and try again.' };
+      }
       
       if (response && response.access_token) {
         // Save token to localStorage for fetch requests
@@ -100,9 +108,31 @@ export function AuthProvider({ children }) {
       // Make sure to clean up any partial state
       localStorage.removeItem('auth_token');
       document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      
+      // Extract meaningful error message from the error
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      if (error.message) {
+        // Check for specific authentication errors
+        if (error.message.includes('Incorrect email or password')) {
+          errorMessage = 'Incorrect email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('email and password are required')) {
+          errorMessage = 'Please enter both email and password.';
+        } else if (error.message.includes('401')) {
+          errorMessage = 'Incorrect email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('400')) {
+          errorMessage = 'Please check your email and password format.';
+        } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          // Use the actual error message if it's meaningful
+          errorMessage = error.message;
+        }
+      }
+      
       return { 
         success: false, 
-        error: error.message || 'Login failed. Please check your credentials.'
+        error: errorMessage
       };
     }
   };

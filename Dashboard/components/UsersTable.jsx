@@ -10,6 +10,7 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [userPasswords, setUserPasswords] = useState({});
   const [loadingPasswords, setLoadingPasswords] = useState({});
+  const [copiedPasswords, setCopiedPasswords] = useState({});
   // No longer need to track password visibility since passwords are always shown
 
   // Pre-load passwords when component mounts
@@ -127,7 +128,13 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
     if (password) {
       navigator.clipboard.writeText(password)
         .then(() => {
-          alert('Password copied to clipboard!');
+          // Show copied state
+          setCopiedPasswords(prev => ({ ...prev, [userId]: true }));
+          
+          // Reset after 2 seconds
+          setTimeout(() => {
+            setCopiedPasswords(prev => ({ ...prev, [userId]: false }));
+          }, 2000);
         })
         .catch(err => {
           console.error('Failed to copy password:', err);
@@ -291,11 +298,17 @@ const UsersTable = ({ data, onEdit, onDelete }) => {
                       {/* Copy button */}
                       <button
                         onClick={() => copyPasswordToClipboard(user.id)}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg flex-shrink-0"
-                        title="Copy Password"
+                        className={`p-2 rounded-lg flex-shrink-0 transition-all duration-300 ease-in-out transform ${
+                          copiedPasswords[user.id] 
+                            ? 'bg-green-500 text-white scale-110 shadow-lg' 
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700 hover:scale-105'
+                        }`}
+                        title={copiedPasswords[user.id] ? "Copied!" : "Copy Password"}
                         style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <i className="fas fa-copy"></i>
+                        <i className={`fas transition-all duration-300 ${
+                          copiedPasswords[user.id] ? 'fa-check' : 'fa-copy'
+                        }`}></i>
                       </button>
                     </div>
                   </td>

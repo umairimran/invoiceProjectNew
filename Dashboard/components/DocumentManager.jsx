@@ -75,17 +75,23 @@ const DocumentManager = ({
     setDocumentToDelete(null);
   };
 
-  const handleDownload = (document) => {
-    // Extract filename from path if it's a full path
-    const filename = document.original_filename || document.file_path.split('/').pop();
-    
-    // Create download URL - adjust this based on your API structure
-    const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/files/${filename}`;
-    
+  const handleDownload = (doc) => {
+    // Guard for non-browser environments
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+    // Use stored filename for URL, but prefer original name for download attribute
+    const storedFilename = doc.file_path.split('/').pop();
+    const suggestedName = doc.original_filename || storedFilename;
+
+    // Create download URL; request as attachment and pass original name when available
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const asNameParam = encodeURIComponent(suggestedName);
+    const downloadUrl = `${baseUrl}/files/${storedFilename}?download=true&as_name=${asNameParam}`;
+
     // Create a temporary link element and trigger download
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.download = filename;
+    link.download = suggestedName;
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();

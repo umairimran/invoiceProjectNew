@@ -321,8 +321,9 @@ export default function JobDetailsPage() {
           <p className="font-helvetica">{error}</p>
           <button 
             onClick={() => router.back()}
-            className="btn btn-secondary mt-4"
+            className="px-6 py-3 font-helvetica font-medium text-white bg-secondary hover:bg-secondary/90 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center mt-4"
           >
+            <i className="fas fa-arrow-left mr-2"></i>
             Go Back
           </button>
         </div>
@@ -413,7 +414,7 @@ export default function JobDetailsPage() {
                   
                   <div className="mt-4 flex justify-end">
                     <button 
-                      className="btn btn-secondary text-sm py-1 px-3"
+                      className="px-4 py-2 font-helvetica font-medium text-white bg-secondary hover:bg-secondary/90 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md inline-flex items-center text-sm"
                       onClick={() => router.push(`/jobs/${id}/documents/${folder.id}`)}
                     >
                       <i className="fas fa-upload mr-1"></i>
@@ -438,14 +439,23 @@ export default function JobDetailsPage() {
                         setFormData(job);
                         setIsEditing(false);
                       }}
-                      className="btn bg-gray-500 text-white hover:bg-gray-600"
+                      className={`px-6 py-3 font-helvetica font-medium rounded-lg transition-all duration-200 inline-flex items-center ${
+                        saving 
+                          ? 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed' 
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 shadow-sm hover:shadow-md'
+                      }`}
                       disabled={saving}
                     >
+                      <i className="fas fa-times mr-2"></i>
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="btn btn-primary"
+                      className={`px-6 py-3 font-helvetica font-medium rounded-lg transition-all duration-200 inline-flex items-center ${
+                        saving 
+                          ? 'text-white bg-gray-400 cursor-not-allowed' 
+                          : 'text-white bg-secondary hover:bg-secondary/90 shadow-md hover:shadow-lg'
+                      }`}
                       disabled={saving}
                     >
                       {saving ? (
@@ -454,7 +464,10 @@ export default function JobDetailsPage() {
                           Saving...
                         </>
                       ) : (
-                        'Save Changes'
+                        <>
+                          <i className="fas fa-save mr-2"></i>
+                          Save Changes
+                        </>
                       )}
                     </button>
                   </>
@@ -462,7 +475,7 @@ export default function JobDetailsPage() {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="px-6 py-3 font-helvetica font-medium text-white bg-secondary hover:bg-secondary/90 rounded-lg transition-all duration-200 shadow-md inline-flex items-center"
+                    className="px-6 py-3 font-helvetica font-medium text-white bg-secondary hover:bg-secondary/90 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center"
                   >
                     <i className="fas fa-edit mr-2"></i>
                     Edit Details

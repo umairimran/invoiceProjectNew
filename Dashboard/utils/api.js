@@ -146,6 +146,7 @@ async function fetchAPI(endpoint, options = {}) {
             window.location.href = '/login';
             return null;
           }
+          // For login page, don't return null - let the error be thrown with proper message
         }
         
         // Don't throw immediately on 404s, let the caller handle them

@@ -441,7 +441,8 @@ async def delete_job_document(
     document = job["checklist"][folder_type][document_index]
     
     # Delete file if it exists
-    file_path = os.path.join(UPLOAD_DIR, document["file_path"])
+    # The file_path already includes "uploads/" prefix, so use it directly
+    file_path = document["file_path"]
     if os.path.exists(file_path):
         os.remove(file_path)
     

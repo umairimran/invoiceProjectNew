@@ -8,7 +8,7 @@ router = APIRouter()
 UPLOAD_DIR = Path("uploads")
 
 @router.get("/files/{filename}")
-async def get_file(filename: str, download: bool = False):
+async def get_file(filename: str, download: bool = False, as_name: str | None = None):
     """
     Get a file by filename. If download is True, return as an attachment.
     """
@@ -28,7 +28,7 @@ async def get_file(filename: str, download: bool = False):
     return FileResponse(
         path=file_path,
         media_type="application/octet-stream",
-        filename=filename,
+        filename=as_name or filename,
         # If download=True, force download as attachment
         content_disposition_type="attachment" if download else "inline"
     )

@@ -56,8 +56,8 @@ async def startup_db_client():
     if await users_collection.count_documents({}) == 0:
         default_admin = {
             "username": "admin",
-            "email": "admin@example.com",
-            "hashed_password": get_password_hash("adminpassword"),
+            "email": "admin@gmail.com",
+            "hashed_password": get_password_hash("admin123"),
             "role": Role.ADMIN
         }
         await users_collection.insert_one(default_admin)
