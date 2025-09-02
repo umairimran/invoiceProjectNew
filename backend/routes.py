@@ -437,34 +437,51 @@ async def upload_file(
     if document_type not in valid_document_types:
         raise HTTPException(status_code=400, detail=f"Invalid document type. Must be one of: {', '.join(valid_document_types)}")
     
-    # Create directory structure
-    upload_dir = ensure_upload_dir(f"uploads/{document_type}")
-    
-    # Create unique filename with timestamp
-    import time
-    timestamp = int(time.time())
-    filename = f"{entity_id}_{document_type}_{timestamp}_{file.filename}"
-    file_path = f"uploads/{document_type}/{filename}"
-    
-    # Save the file
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # If this is a rate card upload, persist the reference on the corresponding entity
-    if document_type == "rate_card":
-        # Try update client by client_code
-        await clients_collection.find_one_and_update(
-            {"client_code": entity_id},
-            {"$set": {"rate_card_file": filename}}
+    try:
+        from s3_service import get_s3_service
+        s3_service = get_s3_service()
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Generate S3 key
+        s3_key = s3_service.generate_s3_key(document_type, entity_id, file.filename)
+        
+        # Upload to S3
+        upload_result = await s3_service.upload_file(
+            file_content=file_content,
+            s3_key=s3_key,
+            content_type=file.content_type
         )
-        if not await clients_collection.find_one({"client_code": entity_id}):
-            # Try update agency by agency_code
-            await agencies_collection.find_one_and_update(
-                {"agency_code": entity_id},
+        
+        # Extract filename from S3 key for backward compatibility
+        filename = os.path.basename(s3_key)
+        file_path = s3_key  # Use S3 key as file path
+
+        # If this is a rate card upload, persist the reference on the corresponding entity
+        if document_type == "rate_card":
+            # Try update client by client_code
+            await clients_collection.find_one_and_update(
+                {"client_code": entity_id},
                 {"$set": {"rate_card_file": filename}}
             )
+            if not await clients_collection.find_one({"client_code": entity_id}):
+                # Try update agency by agency_code
+                await agencies_collection.find_one_and_update(
+                    {"agency_code": entity_id},
+                    {"$set": {"rate_card_file": filename}}
+                )
 
-    return {"filename": filename, "file_path": file_path}
+        return {
+            "filename": filename, 
+            "file_path": file_path,
+            "s3_key": s3_key,
+            "file_url": upload_result["file_url"],
+            "size": upload_result["size"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
 
 # Folder status endpoint
 @router.get("/agencies/{agency_code}/folders/status")

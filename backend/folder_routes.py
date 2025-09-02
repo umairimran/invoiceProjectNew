@@ -222,22 +222,32 @@ async def upload_file(
     if not folder:
         raise HTTPException(status_code=404, detail="Folder not found")
     
-    # Create upload directory
-    folder_type = folder["type"]
-    upload_dir = ensure_upload_dir(f"uploads/{folder_type}")
+    # Upload to S3
+    from s3_service import get_s3_service
+    s3_service = get_s3_service()
+    
+    # Read file content
+    file_content = await file.read()
     
     # Create unique filename
     timestamp = int(datetime.utcnow().timestamp())
     random_suffix = secrets.token_hex(4)
     filename = f"{folder_id}_{timestamp}_{random_suffix}_{file.filename}"
-    file_path = f"uploads/{folder_type}/{filename}"
     
-    # Save the file
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Generate S3 key
+    folder_type = folder["type"]
+    s3_key = f"uploads/{folder_type}/{filename}"
     
-    # Get file size
-    file_size = os.path.getsize(file_path)
+    # Upload to S3
+    upload_result = await s3_service.upload_file(
+        file_content=file_content,
+        s3_key=s3_key,
+        content_type=file.content_type
+    )
+    
+    # Use S3 key as file path
+    file_path = s3_key
+    file_size = upload_result["size"]
     
     # Create file document
     file_in_db = FileInDB(

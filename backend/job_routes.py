@@ -309,18 +309,26 @@ async def upload_document_to_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    # Create uploads directory if it doesn't exist
-    job_upload_dir = os.path.join(UPLOAD_DIR, "jobs", job_id, folder_type)
-    os.makedirs(job_upload_dir, exist_ok=True)
+    # Upload to S3
+    from s3_service import get_s3_service
+    s3_service = get_s3_service()
     
-    # Generate unique filename
-    file_extension = os.path.splitext(file.filename)[1]
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join(job_upload_dir, unique_filename)
+    # Read file content
+    file_content = await file.read()
     
-    # Save file
-    with open(file_path, "wb") as buffer:
-        buffer.write(await file.read())
+    # Generate S3 key
+    s3_key = s3_service.generate_job_s3_key(job_id, folder_type, file.filename)
+    
+    # Upload to S3
+    upload_result = await s3_service.upload_file(
+        file_content=file_content,
+        s3_key=s3_key,
+        content_type=file.content_type
+    )
+    
+    # Extract filename from S3 key for backward compatibility
+    unique_filename = os.path.basename(s3_key)
+    file_path = s3_key  # Use S3 key as file path
     
     # Parse metadata
     try:
@@ -330,7 +338,7 @@ async def upload_document_to_job(
     
     # Create document
     document = Document(
-        file_path=f"uploads/jobs/{job_id}/{folder_type}/{unique_filename}", #Corrected file path
+        file_path=file_path,  # Use S3 key as file path
         original_filename=file.filename,
         metadata=parsed_metadata,
         # uploaded_by=current_user.id
@@ -589,7 +597,7 @@ async def process_job_documents_and_update_status(job_id: str):
             return
         
         # Run AI processing to extract data
-        await process_job_documents(job_id)
+        process_job_documents(job)
         
         # Get updated job with new review data
         updated_job = await jobs_collection.find_one({"_id": ObjectId(job_id)})

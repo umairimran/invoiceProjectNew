@@ -10,6 +10,8 @@ import re
 import json
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
+import tempfile
+import io
 
 import pdfplumber
 from dotenv import load_dotenv
@@ -29,6 +31,98 @@ logger = logging.getLogger(__name__)
 
 # Constants
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+
+# S3 Helper Functions
+def get_s3_client():
+    """
+    Get S3 client using environment variables.
+    """
+    import boto3
+    from botocore.exceptions import ClientError, NoCredentialsError
+    
+    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    aws_region = os.getenv("AWS_REGION", "us-east-1")
+    bucket_name = os.getenv("S3_BUCKET_NAME")
+    
+    if not all([aws_access_key_id, aws_secret_access_key, bucket_name]):
+        raise ValueError("Missing required AWS environment variables")
+    
+    return boto3.client(
+        's3',
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=aws_region
+    ), bucket_name
+
+def get_file_from_s3(s3_key: str) -> bytes:
+    """
+    Download file content from S3 using boto3 client directly.
+    
+    Args:
+        s3_key: The S3 key/path of the file
+        
+    Returns:
+        bytes: The file content
+    """
+    try:
+        s3_client, bucket_name = get_s3_client()
+        
+        # Download file content directly
+        response = s3_client.get_object(Bucket=bucket_name, Key=s3_key)
+        return response['Body'].read()
+            
+    except Exception as e:
+        logger.error(f"Error downloading file from S3 {s3_key}: {e}")
+        raise
+
+def read_pdf_from_s3(s3_key: str) -> str:
+    """
+    Read PDF content from S3 and extract text.
+    
+    Args:
+        s3_key: The S3 key/path of the PDF file
+        
+    Returns:
+        str: Extracted text from the PDF
+    """
+    try:
+        # Get file content from S3
+        file_content = get_file_from_s3(s3_key)
+        
+        # Use pdfplumber to extract text from bytes
+        with pdfplumber.open(io.BytesIO(file_content)) as pdf:
+            text = ""
+            for page in pdf.pages:
+                page_text = page.extract_text() or ""
+                text += page_text + "\n"
+            return text.strip()
+            
+    except Exception as e:
+        logger.error(f"Error reading PDF from S3 {s3_key}: {e}")
+        raise
+
+def read_excel_from_s3(s3_key: str) -> Optional[List[List[Any]]]:
+    """
+    Read Excel content from S3 and return as list of lists.
+    
+    Args:
+        s3_key: The S3 key/path of the Excel file
+        
+    Returns:
+        Optional[List[List[Any]]]: Excel content as list of lists, or None if error
+    """
+    try:
+        # Get file content from S3
+        file_content = get_file_from_s3(s3_key)
+        
+        # Use pandas to read Excel from bytes
+        df = pd.read_excel(io.BytesIO(file_content), sheet_name=0, header=None)
+        return df.values.tolist()
+        
+    except Exception as e:
+        logger.error(f"Error reading Excel from S3 {s3_key}: {e}")
+        return None
 
 # Main AI processing function
 def process_job_documents(job: Dict[str, Any]) -> Dict[str, Any]:
@@ -53,7 +147,7 @@ def process_job_documents(job: Dict[str, Any]) -> Dict[str, Any]:
         if not documents:
             continue
             
-        folder_data = process_folder_documents(folder_type, documents, job["id"])
+        folder_data = process_folder_documents(folder_type, documents, str(job["_id"]))
         extracted_data.update(folder_data)
     
     # Post-process the extracted data (e.g., calculate totals, validate data)
@@ -477,12 +571,9 @@ def extract_po_details_from_job_order(job_order_docs: list):
     if not file_path:
         return {}
 
-    # Extract text from the PDF
+    # Extract text from the PDF using S3
     try:
-        with pdfplumber.open(file_path) as pdf:
-            text = ""
-            for page in pdf.pages:
-                text += page.extract_text()
+        text = read_pdf_from_s3(file_path)
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return {"error": f"Failed to read PDF {original_file_name}"}
@@ -624,7 +715,7 @@ Your task:
     file_path = selected_doc.get("file_path")
     original_file_name = selected_doc.get("original_filename", file_path)
 
-    excel_data = read_excel_file(file_path)
+    excel_data = read_excel_from_s3(file_path)
     if not excel_data:
         return {"error": f"Failed to read Excel file {original_file_name}"}
 
@@ -720,18 +811,12 @@ def extract_invoices_text(invoices: List[Dict]) -> List[str]:
             extracted_texts.append("")  # preserve alignment
             continue
 
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            extracted_texts.append("")
-            continue
-
         try:
-            with pdfplumber.open(file_path) as pdf:
-                pages_text = [page.extract_text() or "" for page in pdf.pages]
-                text = "\n".join(pages_text).strip()
-                extracted_texts.append(text)
-                if not text:
-                    logger.warning(f"No text extracted from {file_path} (possibly scanned image).")
+            # Use S3 to read the PDF file
+            text = read_pdf_from_s3(file_path)
+            extracted_texts.append(text)
+            if not text:
+                logger.warning(f"No text extracted from {file_path} (possibly scanned image).")
         except Exception as e:
             logger.exception(f"Error processing {file_path}")
             extracted_texts.append("")
@@ -740,10 +825,6 @@ def extract_invoices_text(invoices: List[Dict]) -> List[str]:
 def read_excel_file(file_path: str) -> Optional[List[List[Any]]]:
     """
     Reads the first sheet of an Excel file and returns its content as a list of lists.
+    Now uses S3 for file access.
     """
-    try:
-        df = pd.read_excel(file_path, sheet_name=0, header=None) 
-        return df.values.tolist()
-    except Exception as e:
-        print(f"Error reading Excel file {file_path}: {e}")
-        return None
+    return read_excel_from_s3(file_path)

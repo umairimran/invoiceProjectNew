@@ -40,12 +40,8 @@ app.include_router(invoice_router, prefix="/api")
 app.include_router(report_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 
-# Create upload directories
-uploads_dir = Path("uploads")
-uploads_dir.mkdir(exist_ok=True)
-
-# Serve static files for uploads
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# Note: File uploads are now handled via S3, no local uploads directory needed
+# The /uploads mount has been removed as files are served directly from S3
 
 @app.on_event("startup")
 async def startup_db_client():
