@@ -138,13 +138,16 @@ The automated system delivered substantial improvements in speed, accuracy, and 
 
 Watch the full system walkthrough below 👇
 
-<div style="position: relative; padding-bottom: 62.5%; height: 0;">
-  <iframe src="https://www.loom.com/embed/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" frameborder="0" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px;">
+  <iframe 
+    src="https://www.loom.com/embed/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" 
+    frameborder="0" 
+    allowfullscreen 
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+  </iframe>
 </div>
 
-[▶ Watch on Loom](https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90)
-
----
+🎬 **[Watch on Loom →](https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90)**
 
 ## 🚀 Getting Started (Development Setup)
 
