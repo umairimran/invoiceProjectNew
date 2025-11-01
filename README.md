@@ -4,6 +4,22 @@ A comprehensive **AI-based document verification and invoice approval system** d
 
 ---
 
+## 🎥 System Demo
+
+Watch the full system walkthrough below 👇
+
+<div align="center">
+  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank">
+    <img src="portfolio_images/thumbnail.png" alt="System Demo Video" style="max-width: 100%; height: auto; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+  </a>
+  <br><br>
+  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank">
+    <strong>▶️ Click to Watch Full Demo on Loom</strong>
+  </a>
+</div>
+
+---
+
 ## 📋 Problem & Goal: Automating Finance Operations
 
 The traditional invoice approval process faced severe inefficiencies that threatened scalability:
@@ -131,22 +147,6 @@ The automated system delivered substantial improvements in speed, accuracy, and 
 | **Error Rate** | 10–15% | **< 2%** | Significant accuracy boost |
 | **Scalability** | Limited & bottlenecked | Multi-agency & High Volume Ready | Sustainable growth |
 | **User Experience** | Complex & frustrating | Streamlined, Unified Dashboard | Improved stakeholder satisfaction |
-
----
-
-## 🎥 System Demo
-
-Watch the full system walkthrough below 👇
-
-<div align="center">
-  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank">
-    <img src="portfolio_images/thumbnail.png" alt="System Demo Video" style="max-width: 100%; height: auto; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-  </a>
-  <br><br>
-  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank">
-    <strong>▶️ Click to Watch Full Demo on Loom</strong>
-  </a>
-</div>
 
 ## 🚀 Getting Started (Development Setup)
 
