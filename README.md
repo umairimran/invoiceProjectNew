@@ -4,9 +4,9 @@ A comprehensive **AI-based document verification and invoice approval system** d
 
 ---
 
-## 📋 Problem & Goal: Automating Finance for Bashayer
+## 📋 Problem & Goal: Automating Finance Operations
 
-The traditional invoice approval process for **Bashayer (Riyadh, Saudi Arabia)** faced severe inefficiencies that threatened scalability:
+The traditional invoice approval process faced severe inefficiencies that threatened scalability:
 
 * **Manual Processing Bottleneck:** Every invoice, quotation, and supporting document required time-intensive human review.
 * **Error-Prone Verification:** Reviewers frequently missed subtle inconsistencies or miscalculations, leading to financial inaccuracies.
@@ -147,17 +147,6 @@ Watch the full system walkthrough below 👇
     <strong>▶️ Click to Watch Full Demo on Loom</strong>
   </a>
 </div>
-
-### Embedded Player (for platforms supporting iframes)
-
-<iframe 
-  src="https://www.loom.com/embed/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" 
-  frameborder="0" 
-  webkitallowfullscreen 
-  mozallowfullscreen 
-  allowfullscreen
-  style="width: 100%; height: 500px; border-radius: 10px; margin: 20px 0;">
-</iframe>
 
 ## 🚀 Getting Started (Development Setup)
 
