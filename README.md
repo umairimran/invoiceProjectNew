@@ -13,8 +13,8 @@ Watch the full system walkthrough below 👇
     <img src="portfolio_images/thumbnail.png" alt="System Demo Video" style="max-width: 100%; height: auto; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
   </a>
   <br><br>
-  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: inline-block; padding: 10px 20px; background-color: #6366f1; color: white; border-radius: 5px;">
-    <strong>▶️ Click to Watch Full Demo on Loom (Opens in New Tab)</strong>
+  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank" rel="noopener noreferrer">
+    <strong>▶️ Click to Watch Full Demo on Loom</strong>
   </a>
 </div>
 
