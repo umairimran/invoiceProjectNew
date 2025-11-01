@@ -39,7 +39,7 @@ An end-to-end **AI-powered invoice verification system** integrating intelligent
 
 **Tech Stack:** `Python`, `FastAPI`, `Gemini API`, `PyPDF`, `Pandas`
 
-![AI Extraction Pipeline](portfolio_images/invoice approval page.png)
+![AI Extraction Pipeline](portfolio_images/invoice_approval.png)
 
 ---
 
@@ -71,7 +71,7 @@ An end-to-end **AI-powered invoice verification system** integrating intelligent
 * **Accuracy Improvement:** Monitoring of AI validation accuracy over time.
 * **Performance Summaries:** Agency-wise breakdown of volume and efficiency.
 
-![Dashboard Statistics](portfolio_images/dsahboard stats.png)
+![Dashboard Statistics](portfolio_images/dashboard_stats.png)
 
 ---
 
@@ -203,4 +203,5 @@ invoiceProjectNew/
 │   ├── components/       # Reusable UI components
 │   └── public/           # Static assets
 │
-└── portfolio_images/     # Documentation visuals and mockups
+└── portfolio_images/     #  visuals and mockups
+
