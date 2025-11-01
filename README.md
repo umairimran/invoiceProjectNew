@@ -138,16 +138,26 @@ The automated system delivered substantial improvements in speed, accuracy, and 
 
 Watch the full system walkthrough below 👇
 
-<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px;">
-  <iframe 
-    src="https://www.loom.com/embed/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" 
-    frameborder="0" 
-    allowfullscreen 
-    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
-  </iframe>
+<div align="center">
+  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank">
+    <img src="portfolio_images/thumbnail.png" alt="System Demo Video" style="max-width: 100%; height: auto; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+  </a>
+  <br><br>
+  <a href="https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" target="_blank">
+    <strong>▶️ Click to Watch Full Demo on Loom</strong>
+  </a>
 </div>
 
-🎬 **[Watch on Loom →](https://www.loom.com/share/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90)**
+### Embedded Player (for platforms supporting iframes)
+
+<iframe 
+  src="https://www.loom.com/embed/ccbcc0284a2a4b728ff18dcf3757a052?sid=4ee1167a-1721-41bb-b094-a3ec6fa3cc90" 
+  frameborder="0" 
+  webkitallowfullscreen 
+  mozallowfullscreen 
+  allowfullscreen
+  style="width: 100%; height: 500px; border-radius: 10px; margin: 20px 0;">
+</iframe>
 
 ## 🚀 Getting Started (Development Setup)
 
