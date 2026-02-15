@@ -32,96 +32,49 @@ logger = logging.getLogger(__name__)
 # Constants
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 
-# S3 Helper Functions
-def get_s3_client():
+# Local file storage (backend/uploads/) - no AWS required
+def get_file_from_local(relative_path: str) -> bytes:
     """
-    Get S3 client using environment variables.
+    Read file content from local uploads directory (backend/uploads/).
+    relative_path: e.g. uploads/jobs/{job_id}/agency_invoice/file.pdf
     """
-    import boto3
-    from botocore.exceptions import ClientError, NoCredentialsError
-    
-    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-    aws_region = os.getenv("AWS_REGION", "us-east-1")
-    bucket_name = os.getenv("S3_BUCKET_NAME")
-    
-    if not all([aws_access_key_id, aws_secret_access_key, bucket_name]):
-        raise ValueError("Missing required AWS environment variables")
-    
-    return boto3.client(
-        's3',
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        region_name=aws_region
-    ), bucket_name
-
-def get_file_from_s3(s3_key: str) -> bytes:
-    """
-    Download file content from S3 using boto3 client directly.
-    
-    Args:
-        s3_key: The S3 key/path of the file
-        
-    Returns:
-        bytes: The file content
-    """
+    from local_storage import read_file as local_read
     try:
-        s3_client, bucket_name = get_s3_client()
-        
-        # Download file content directly
-        response = s3_client.get_object(Bucket=bucket_name, Key=s3_key)
-        return response['Body'].read()
-            
+        return local_read(relative_path)
     except Exception as e:
-        logger.error(f"Error downloading file from S3 {s3_key}: {e}")
+        logger.error(f"Error reading file from local storage {relative_path}: {e}")
         raise
 
-def read_pdf_from_s3(s3_key: str) -> str:
+
+def read_pdf_from_s3(file_path: str) -> str:
     """
-    Read PDF content from S3 and extract text.
-    
-    Args:
-        s3_key: The S3 key/path of the PDF file
-        
-    Returns:
-        str: Extracted text from the PDF
+    Read PDF content from local storage and extract text.
+    file_path: relative path e.g. uploads/jobs/.../file.pdf
     """
     try:
-        # Get file content from S3
-        file_content = get_file_from_s3(s3_key)
-        
-        # Use pdfplumber to extract text from bytes
+        file_content = get_file_from_local(file_path)
         with pdfplumber.open(io.BytesIO(file_content)) as pdf:
             text = ""
             for page in pdf.pages:
                 page_text = page.extract_text() or ""
                 text += page_text + "\n"
             return text.strip()
-            
     except Exception as e:
-        logger.error(f"Error reading PDF from S3 {s3_key}: {e}")
+        logger.error(f"Error reading PDF {file_path}: {e}")
         raise
 
-def read_excel_from_s3(s3_key: str) -> Optional[List[List[Any]]]:
+
+def read_excel_from_s3(file_path: str) -> Optional[List[List[Any]]]:
     """
-    Read Excel content from S3 and return as list of lists.
-    
-    Args:
-        s3_key: The S3 key/path of the Excel file
-        
-    Returns:
-        Optional[List[List[Any]]]: Excel content as list of lists, or None if error
+    Read Excel content from local storage and return as list of lists.
+    file_path: relative path e.g. uploads/jobs/.../file.xlsx
     """
     try:
-        # Get file content from S3
-        file_content = get_file_from_s3(s3_key)
-        
-        # Use pandas to read Excel from bytes
+        file_content = get_file_from_local(file_path)
         df = pd.read_excel(io.BytesIO(file_content), sheet_name=0, header=None)
         return df.values.tolist()
-        
     except Exception as e:
-        logger.error(f"Error reading Excel from S3 {s3_key}: {e}")
+        logger.error(f"Error reading Excel {file_path}: {e}")
         return None
 
 # Main AI processing function
@@ -170,13 +123,17 @@ def process_folder_documents(folder_type: str, documents: List[Dict], job_id: st
     """
     extracted_data = {}
     
+    from local_storage import get_local_path
     for doc in documents:
-        # Get the full path to the document
-        file_path = os.path.join(UPLOAD_DIR, doc["file_path"])
-        if not os.path.exists(file_path):
-            print(f"File not found: {file_path}")
+        # Resolve relative path (uploads/jobs/.../file.pdf) to backend absolute path
+        relative_path = doc.get("file_path")
+        if not relative_path or not isinstance(relative_path, str):
             continue
-            
+        full_path = get_local_path(relative_path)
+        if not full_path.is_file():
+            print(f"File not found: {full_path}")
+            continue
+        file_path = str(full_path)
         # Extract text from the document
         text = extract_text_from_document(file_path)
         if not text:
@@ -453,11 +410,12 @@ def gemini_api_function(prompt: str, schema: dict):
     # Load environment variables
     load_dotenv()
 
-    # Initialize client with API key
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    # Initialize client with API key (GOOGLE_API_KEY or GEMINI_API_KEY in .env)
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    client = genai.Client(api_key=api_key)
 
-    # Choose model
-    model = "gemini-2.0-flash"
+    # Use gemini-2.5-flash-lite (same as generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite)
+    model = "gemini-2.5-flash-lite"
 
     # Generate structured output
     response = client.models.generate_content(

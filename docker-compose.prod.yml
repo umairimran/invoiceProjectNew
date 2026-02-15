@@ -1,3 +1,6 @@
+# Production: backend + MongoDB only (for AWS).
+# Frontend is deployed separately on Vercel.
+
 version: "3.9"
 
 services:
@@ -10,25 +13,15 @@ services:
     restart: unless-stopped
 
   backend:
-    build: ./backend
+    image: umairimran627/invoiceproject-backend:latest
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       MONGODB_URI: mongodb://mongo:27017
     depends_on:
       - mongo
-    restart: unless-stopped
-
-  frontend:
-    build: ./Dashboard
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./Dashboard/.env.local
-    depends_on:
-      - backend
     restart: unless-stopped
 
 volumes:

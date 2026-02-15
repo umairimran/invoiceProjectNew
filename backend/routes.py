@@ -438,25 +438,13 @@ async def upload_file(
         raise HTTPException(status_code=400, detail=f"Invalid document type. Must be one of: {', '.join(valid_document_types)}")
     
     try:
-        from s3_service import get_s3_service
-        s3_service = get_s3_service()
-        
-        # Read file content
+        from local_storage import save_file as local_save, generate_document_file_path as gen_path
         file_content = await file.read()
-        
-        # Generate S3 key
-        s3_key = s3_service.generate_s3_key(document_type, entity_id, file.filename)
-        
-        # Upload to S3
-        upload_result = await s3_service.upload_file(
-            file_content=file_content,
-            s3_key=s3_key,
-            content_type=file.content_type
-        )
-        
-        # Extract filename from S3 key for backward compatibility
-        filename = os.path.basename(s3_key)
-        file_path = s3_key  # Use S3 key as file path
+        relative_path = gen_path(document_type, entity_id, file.filename)
+        upload_result = local_save(relative_path, file_content, content_type=file.content_type)
+        filename = os.path.basename(relative_path)
+        file_path = relative_path
+        s3_key = relative_path
 
         # If this is a rate card upload, persist the reference on the corresponding entity
         if document_type == "rate_card":
@@ -473,10 +461,10 @@ async def upload_file(
                 )
 
         return {
-            "filename": filename, 
+            "filename": filename,
             "file_path": file_path,
             "s3_key": s3_key,
-            "file_url": upload_result["file_url"],
+            "file_url": upload_result.get("file_url", f"/api/files/serve/{relative_path}"),
             "size": upload_result["size"]
         }
         

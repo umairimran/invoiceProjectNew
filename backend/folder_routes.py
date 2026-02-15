@@ -222,31 +222,16 @@ async def upload_file(
     if not folder:
         raise HTTPException(status_code=404, detail="Folder not found")
     
-    # Upload to S3
-    from s3_service import get_s3_service
-    s3_service = get_s3_service()
-    
-    # Read file content
+    # Save to local project dir (backend/uploads/)
+    from local_storage import save_file as local_save
     file_content = await file.read()
-    
-    # Create unique filename
     timestamp = int(datetime.utcnow().timestamp())
     random_suffix = secrets.token_hex(4)
     filename = f"{folder_id}_{timestamp}_{random_suffix}_{file.filename}"
-    
-    # Generate S3 key
     folder_type = folder["type"]
-    s3_key = f"uploads/{folder_type}/{filename}"
-    
-    # Upload to S3
-    upload_result = await s3_service.upload_file(
-        file_content=file_content,
-        s3_key=s3_key,
-        content_type=file.content_type
-    )
-    
-    # Use S3 key as file path
-    file_path = s3_key
+    relative_path = f"uploads/{folder_type}/{filename}"
+    upload_result = local_save(relative_path, file_content, content_type=file.content_type)
+    file_path = relative_path
     file_size = upload_result["size"]
     
     # Create file document
@@ -324,10 +309,19 @@ async def delete_file(
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
     
-    # Delete file from filesystem
-    file_path = file["file_path"]
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    # Delete file from local storage
+    file_path = file.get("file_path")
+    if file_path and str(file_path).startswith("uploads/"):
+        try:
+            from local_storage import delete_file as local_delete
+            local_delete(file_path)
+        except Exception:
+            pass
+    elif file_path and os.path.isabs(file_path) and os.path.isfile(file_path):
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass
     
     # Delete file from database
     await files_collection.delete_one({"_id": file_obj_id})

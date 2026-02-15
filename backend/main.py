@@ -21,11 +21,14 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()  # take environment variables from .env
-origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://invoicesproject-pajsiv6n2-umairimrans-projects-de44185d.vercel.app").split(",")
+
+# CORS: allow frontend (Vercel + local dev). Override with CORS_ORIGINS env (comma-separated) if needed.
+origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://invoice-project-new.vercel.app").split(",")
+origins = [o.strip() for o in origins if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporarily allow all origins for testing
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

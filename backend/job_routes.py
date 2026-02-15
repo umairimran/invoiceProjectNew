@@ -309,26 +309,13 @@ async def upload_document_to_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    # Upload to S3
-    from s3_service import get_s3_service
-    s3_service = get_s3_service()
-    
-    # Read file content
+    # Save to local project dir (backend/uploads/)
+    from local_storage import save_file as local_save, generate_job_file_path as gen_path
     file_content = await file.read()
-    
-    # Generate S3 key
-    s3_key = s3_service.generate_job_s3_key(job_id, folder_type, file.filename)
-    
-    # Upload to S3
-    upload_result = await s3_service.upload_file(
-        file_content=file_content,
-        s3_key=s3_key,
-        content_type=file.content_type
-    )
-    
-    # Extract filename from S3 key for backward compatibility
-    unique_filename = os.path.basename(s3_key)
-    file_path = s3_key  # Use S3 key as file path
+    relative_path = gen_path(job_id, folder_type, file.filename)
+    upload_result = local_save(relative_path, file_content, content_type=file.content_type)
+    unique_filename = os.path.basename(relative_path)
+    file_path = relative_path
     
     # Parse metadata
     try:
@@ -447,12 +434,18 @@ async def delete_job_document(
     
     # Get document to delete
     document = job["checklist"][folder_type][document_index]
-    
-    # Delete file if it exists
-    # The file_path already includes "uploads/" prefix, so use it directly
-    file_path = document["file_path"]
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    file_path = document.get("file_path")
+    if file_path and str(file_path).startswith("uploads/"):
+        try:
+            from local_storage import delete_file as local_delete
+            local_delete(file_path)
+        except Exception:
+            pass
+    elif file_path and os.path.isabs(file_path) and os.path.isfile(file_path):
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass
     
     # Remove document from checklist
     job["checklist"][folder_type].pop(document_index)
