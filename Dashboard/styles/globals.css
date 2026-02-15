@@ -148,6 +148,23 @@
   }
 }
 
+/* Route change progress bar (no layout flicker) */
+@keyframes routeProgress {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(200%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-route-progress {
+  animation: routeProgress 0.8s ease-in-out infinite;
+}
+
 /* Custom color variables (used by Tailwind) */
 :root {
   --color-primary: #FF6549;

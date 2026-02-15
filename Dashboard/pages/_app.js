@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import AuthGuard from '../components/AuthGuard';
-import LoadingSpinner from '../components/LoadingSpinner';
+import RouteProgressBar from '../components/RouteProgressBar';
 
 // Import our ngrok wrapper to activate the global fetch override
 function MyApp({ Component, pageProps }) {
@@ -15,10 +15,9 @@ function MyApp({ Component, pageProps }) {
     import('../utils/ngrokFetch');
   }, []);
 
-  // Handle route change events for loading states
+  // Thin top progress bar on route change — layout stays visible to avoid flicker
   useEffect(() => {
     const handleStart = (url) => {
-      // Don't show loading for same page navigation or hash changes
       if (url !== router.asPath && !url.includes('#')) {
         setIsNavigating(true);
       }
@@ -38,18 +37,14 @@ function MyApp({ Component, pageProps }) {
       router.events.off('routeChangeError', handleComplete);
     };
   }, [router]);
-  
-  // Use getLayout pattern if available on the page, otherwise use default layout
+
   const getLayout = Component.getLayout || ((page) => page);
-  
+
   return (
     <AuthProvider>
       <AuthGuard>
-        {isNavigating ? (
-          <LoadingSpinner message="Loading page..." showProgress={true} />
-        ) : (
-          getLayout(<Component {...pageProps} />)
-        )}
+        <RouteProgressBar visible={isNavigating} />
+        {getLayout(<Component {...pageProps} />)}
       </AuthGuard>
     </AuthProvider>
   );
