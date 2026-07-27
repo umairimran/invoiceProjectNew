@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Layout from '../../../components/Layout';
 import { agenciesAPI, jobsAPI } from '../../../utils/api';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { autoTable } from 'jspdf-autotable';
 
 export default function DetailedInvoiceReviewPage() {
   const router = useRouter();
@@ -79,7 +79,7 @@ export default function DetailedInvoiceReviewPage() {
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return '-';
+    if (amount === null || amount === undefined || amount === '') return '-';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'SAR',
@@ -187,62 +187,19 @@ export default function DetailedInvoiceReviewPage() {
         job.review?.final_review_outcome || '-'
       ]);
       
-      // Calculate optimal column widths based on content and available space
-      const columnWidths = [];
-      const totalColumns = columns.length;
-      
-      // Define priority widths for different column types
-      const priorityWidths = {
-        'BU/Markets': 18,
-        'Agency Invoice #': 20,
-        'PO #': 15,
-        'Period/Month': 15,
-        'Invoice Sent Date': 18,
-        'Feedback Date': 18,
-        'Response Date': 18,
-        'Approval Date': 18,
-        'Medium': 15,
-        'Campaign Name': 25,
-        'Net Media Cost': 18,
-        'Agency Fee': 15,
-        'Taxes': 12,
-        '3rd Party Cost': 18,
-        'Invoice Total': 18,
-        'Media Plan Total': 18,
-        'PO Amount W/ AF': 18,
-        'Initial Outcome': 18,
-        'Agency Action': 22,
-        'Final Outcome': 18
-      };
-      
-      // Calculate total priority width
-      let totalPriorityWidth = 0;
-      columns.forEach(col => {
-        totalPriorityWidth += priorityWidths[col] || 18;
-      });
-      
-      // If priority widths fit, use them; otherwise, distribute evenly
-      if (totalPriorityWidth <= availableWidth) {
-        columns.forEach(col => {
-          columnWidths.push(priorityWidths[col] || 18);
-        });
-      } else {
-        // Distribute available width evenly among all columns
-        const evenWidth = Math.floor(availableWidth / totalColumns);
-        columns.forEach(() => {
-          columnWidths.push(evenWidth);
-        });
-      }
-      
       // Create the table with proper positioning
-      doc.autoTable({
+      autoTable(doc, {
         head: [columns],
         body: tableData,
         startY: 65, // Start table below header
+        margin: { top: 65, right: 10, bottom: 15, left: 10 },
+        tableWidth: 'wrap',
+        horizontalPageBreak: true,
+        horizontalPageBreakRepeat: 0,
         styles: {
-          fontSize: 6, // Small font to fit everything
-          cellPadding: 1,
-          overflow: 'linebreak',
+          fontSize: 5,
+          cellPadding: 0.8,
+          overflow: 'ellipsize',
           halign: 'left',
           valign: 'middle'
         },
@@ -250,23 +207,13 @@ export default function DetailedInvoiceReviewPage() {
           fillColor: [220, 38, 38], // Red header matching the theme
           textColor: 255,
           fontStyle: 'bold',
-          fontSize: 6
+          fontSize: 5
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252] // Light gray alternating rows
         },
-        columnStyles: columnWidths.reduce((acc, width, index) => {
-          acc[index] = { cellWidth: width };
-          return acc;
-        }, {}),
-        margin: { top: 65, right: 10, bottom: 15, left: 10 },
-        tableWidth: 'auto',
-        didDrawPage: function (data) {
-          // Ensure we stay on single page
-          if (data.cursor.y > 180) {
-            doc.setFontSize(5);
-          }
-        }
+        pageBreak: 'auto',
+        rowPageBreak: 'avoid'
       });
       
       // Simple footer
@@ -279,7 +226,7 @@ export default function DetailedInvoiceReviewPage() {
       
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
+      alert(`Error generating PDF: ${error?.message || error}`);
     } finally {
       setIsGeneratingPDF(false);
     }

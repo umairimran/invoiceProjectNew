@@ -4,31 +4,31 @@
  */
 
 const ngrokFetch = async (url, options = {}) => {
+  const requestOptions = { ...options };
+
   // Ensure headers object exists
-  if (!options.headers) {
-    options.headers = {};
+  if (!requestOptions.headers) {
+    requestOptions.headers = {};
   }
 
   // Always add ngrok bypass header
-  options.headers['ngrok-skip-browser-warning'] = 'true';
-  
-  // Add custom user agent as backup method
-  options.headers['User-Agent'] = 'InvoiceApp/1.0';
+  requestOptions.headers['ngrok-skip-browser-warning'] = 'true';
 
   // Call the regular fetch with our enhanced options
-  return fetch(url, options);
+  return fetch(url, requestOptions);
 };
 
 // Override the global fetch to always include ngrok headers
 if (typeof window !== 'undefined') {
   const originalFetch = window.fetch;
   window.fetch = function(url, options = {}) {
-    if (url.includes('ngrok')) {
-      if (!options.headers) options.headers = {};
-      options.headers['ngrok-skip-browser-warning'] = 'true';
-      options.headers['User-Agent'] = 'InvoiceApp/1.0';
+    const requestOptions = { ...options };
+
+    if (typeof url === 'string' && url.includes('ngrok')) {
+      if (!requestOptions.headers) requestOptions.headers = {};
+      requestOptions.headers['ngrok-skip-browser-warning'] = 'true';
     }
-    return originalFetch(url, options);
+    return originalFetch(url, requestOptions);
   };
 }
 

@@ -15,8 +15,6 @@ import io
 
 import pdfplumber
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
 import openpyxl
 import pandas as pd
 import logging
@@ -402,32 +400,9 @@ def validate_job_checklist(job: Dict[str, Any]) -> Dict[str, any]:
         "final_review_outcome": final_review_outcome
     }
 def gemini_api_function(prompt: str, schema: dict):
-    import os
-    from dotenv import load_dotenv
-    from google import genai
-    from google.genai import types
+    from openai_processor import openai_api_function
 
-    # Load environment variables
-    load_dotenv()
-
-    # Initialize client with API key (GOOGLE_API_KEY or GEMINI_API_KEY in .env)
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    client = genai.Client(api_key=api_key)
-
-    # Use gemini-2.5-flash-lite (same as generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite)
-    model = "gemini-2.5-flash-lite"
-
-    # Generate structured output
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",  # Force JSON
-            response_schema=schema                  # Apply schema
-        )
-    )
-
-    return response.parsed  # This will be a Python dict (valid JSON)
+    return openai_api_function(prompt, schema)
 
 def extract_agency_details_from_invoices(
     invoices_text_extracted: List[str], agency_invoices: List[Dict[str, Any]]
